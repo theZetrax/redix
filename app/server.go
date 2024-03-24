@@ -22,22 +22,20 @@ func main() {
 		fmt.Println("Failed to bind to port " + PORT)
 		os.Exit(1)
 	}
-	defer l.Close()
 	fmt.Println("Redis-server listening on: ", PORT)
+	defer l.Close()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		for {
-			conn, err := l.Accept()
-			if err != nil {
-				fmt.Println("Error accepting connection: ", err.Error())
-				os.Exit(1)
-			}
-
-			go handler.HandleConnection(conn)
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
 		}
+
+		go handler.HandleConnection(conn)
 	}()
 
 	<-sigChan
