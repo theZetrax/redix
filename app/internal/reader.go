@@ -3,37 +3,26 @@ package internal
 import "strings"
 
 const (
-	CLRF = "\r\n"
+	CLRF   = "\r\n"
+	PREFIX = "*1\r\n$4\r\n"
 )
 
 type Request struct {
-	Method      string
-	HttpVersion string
-	Headers     map[string]string
-	Body        string
-	Url         string
+	CMD string
 }
 
+// Parses the incoming buffer and returns a Request object
 func ParseRequest(buffer []byte) Request {
 	raw := string(buffer)
-	meta_headers := strings.Split(raw, CLRF+CLRF)[0]
-	body := strings.TrimSpace(strings.Split(raw, CLRF+CLRF)[0])
-
-	meta := strings.Split(strings.Split(meta_headers, CLRF)[0], " ")
-	headers_raw := strings.Split(meta_headers, CLRF)[1:]
-	headers := make(map[string]string, 0)
-	for _, h := range headers_raw {
-		header := strings.Split(h, ":")
-		if len(header) != 2 {
-			continue
-		}
-	}
+	// remove the prefix and suffix from the raw request
+	// the prefix and suffix are defined by the protocol
+	// and are not part of the actual command
+	raw = strings.TrimPrefix(raw, PREFIX)
+	raw = strings.TrimSuffix(raw, CLRF+CLRF)
+	raw = strings.ToUpper(strings.TrimSpace(raw))
 
 	return Request{
-		Method:      meta[0],
-		Url:         meta[1],
-		HttpVersion: meta[2],
-		Headers:     headers,
-		Body:        body,
+		CMD: raw,
 	}
+
 }

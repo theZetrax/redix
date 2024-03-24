@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 )
@@ -23,13 +25,20 @@ func main() {
 	defer l.Close()
 	fmt.Println("Redis-server listening on: ", PORT)
 
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection: ", err.Error())
-			os.Exit(1)
-		}
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-		go handler.HandleConnection(conn)
-	}
+	go func() {
+		for {
+			conn, err := l.Accept()
+			if err != nil {
+				fmt.Println("Error accepting connection: ", err.Error())
+				os.Exit(1)
+			}
+
+			go handler.HandleConnection(conn)
+		}
+	}()
+
+	<-sigChan
 }
