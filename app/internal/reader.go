@@ -1,9 +1,17 @@
 package internal
 
-import "strings"
+import (
+	"log"
+)
 
+// Request types
 const (
-	CLRF   = "\r\n"
+	BULK_STRING = "$"
+	ARRAY       = "*"
+)
+
+// Constants
+const (
 	PREFIX = "*1\r\n$4\r\n"
 )
 
@@ -17,12 +25,14 @@ func ParseRequest(buffer []byte) Request {
 	// remove the prefix and suffix from the raw request
 	// the prefix and suffix are defined by the protocol
 	// and are not part of the actual command
-	raw = strings.TrimPrefix(raw, PREFIX)
-	raw = strings.TrimSuffix(raw, CLRF+CLRF)
-	raw = strings.ToUpper(strings.TrimSpace(raw))
+	log.Println("Raw request: ", raw)
+	if parsed, err := parseRaw(raw); err != nil {
+		log.Println("Error parsing request: ", err)
+	} else {
+		log.Println("Parsed request: ", parsed)
+	}
 
 	return Request{
 		CMD: raw,
 	}
-
 }
