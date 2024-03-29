@@ -23,13 +23,16 @@ const (
 )
 
 func parseRaw(raw string) (any, error) {
-	switch raw[0] {
+	data_type := raw[0]
+	switch data_type {
 	case T_SIMPLE_STRING:
 		return parseSimpleString(raw)
 	case T_BULK_STRING:
 		return parseBulkString(raw)
 	case T_ARRAY:
 		return parseArray(raw)
+	case T_INTEGER:
+		return parseInt(raw)
 	default:
 		return nil, errors.New("Invalid raw string")
 	}
