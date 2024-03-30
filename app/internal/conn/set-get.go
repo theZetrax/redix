@@ -104,6 +104,15 @@ func (h *HttpHandler) handleGet(conn net.Conn, req internal.Request) {
 
 	key := args[0]
 
+	// check if expired
+	if h.StorageEngine.ExpiredTimeout(key) {
+		_, err := conn.Write([]byte(encoder.NewNil()))
+		if err != nil {
+			log.Println("Error writing to connection: ", err.Error())
+		}
+		return
+	}
+
 	value, err := h.StorageEngine.Get(key)
 
 	if err != nil {

@@ -45,14 +45,22 @@ func (s *StorageEngine) setTimeout(key string, timeout int) {
 	}
 }
 
-// expiredTimeout checks if the timeout for a key has expired
-func (s *StorageEngine) expiredTimeout(key string) bool {
+// ExpiredTimeout checks if the timeout for a key has expired
+func (s *StorageEngine) ExpiredTimeout(key string) bool {
 	timeout, ok := s.hasTimeout(key)
 	if !ok {
 		return false
 	}
 
-	return int(time.Since(timeout.createdAt).Milliseconds()) > timeout.timeout
+	expired := int(time.Since(timeout.createdAt).Milliseconds()) > timeout.timeout
+
+	// if timed out, delete the key
+	if s.ExpiredTimeout(key) {
+		delete(s.store, key)
+		delete(s.timeout, key)
+	}
+
+	return expired
 }
 
 func (s *StorageEngine) Set(key, value string, opts SetOptions) {
@@ -67,13 +75,6 @@ func (s *StorageEngine) Set(key, value string, opts SetOptions) {
 func (s *StorageEngine) Get(key string) (string, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-
-	// if timed out, delete the key
-	if s.expiredTimeout(key) {
-		delete(s.store, key)
-		delete(s.timeout, key)
-		return "", errors.New("Key not found")
-	}
 
 	val, ok := s.store[key]
 	if !ok {

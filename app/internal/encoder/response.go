@@ -25,3 +25,7 @@ func NewError(err error) string {
 func NewSimpleString(value string) string {
 	return string(parser.T_SIMPLE_STRING) + value + parser.CRLF
 }
+
+func NewNil() string {
+	return string(parser.T_BULK_STRING) + fmt.Sprint(-1) + parser.CRLF
+}
