@@ -57,6 +57,9 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 		case parser.CMD_GET:
 			h.handleGet(conn, req)
 			break
+		case parser.CMD_INFO:
+			h.handleInfo(conn, req)
+			break
 		default:
 			log.Println("Unknown command: ", cmd)
 			_, err := conn.Write([]byte(encoder.NewError(errors.New("ERR unknown command '" + cmd + "'"))))

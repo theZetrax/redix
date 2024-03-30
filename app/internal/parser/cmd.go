@@ -18,6 +18,7 @@ const (
 	CMD_PING = "PING"
 	CMD_SET  = "SET"
 	CMD_GET  = "GET"
+	CMD_INFO = "INFO"
 )
 
 // subcommands
@@ -31,6 +32,7 @@ var COMMANDS = []string{
 	CMD_PING,
 	CMD_GET,
 	CMD_SET,
+	CMD_INFO,
 }
 
 var SUB_COMMANDS = map[string][]string{
