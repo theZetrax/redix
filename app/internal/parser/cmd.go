@@ -14,12 +14,16 @@ import (
 const (
 	CMD_ECHO = "echo"
 	CMD_PING = "ping"
+	CMD_SET  = "set"
+	CMD_GET  = "get"
 )
 
 // do not modify this
 var COMMANDS = []string{
 	CMD_ECHO,
 	CMD_PING,
+	CMD_GET,
+	CMD_SET,
 }
 
 type CMD struct {

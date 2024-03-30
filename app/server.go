@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
+	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
 const (
@@ -15,7 +16,10 @@ const (
 )
 
 func main() {
-	handler := &internal.HttpHandler{}
+	storageEngine := repository.NewStorageEngine()
+	handler := &internal.HttpHandler{
+		StorageEngine: storageEngine,
+	}
 
 	l, err := net.Listen("tcp", "0.0.0.0:"+PORT)
 	if err != nil {

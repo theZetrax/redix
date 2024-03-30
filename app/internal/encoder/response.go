@@ -18,6 +18,10 @@ func NewBulkString(value string) string {
 	return str
 }
 
-func NewError(value string) string {
-	return string(parser.T_ERROR) + value + parser.CRLF
+func NewError(err error) string {
+	return string(parser.T_ERROR) + err.Error() + parser.CRLF
+}
+
+func NewSimpleString(value string) string {
+	return string(parser.T_SIMPLE_STRING) + value + parser.CRLF
 }
