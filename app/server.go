@@ -1,32 +1,33 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/conn"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
-const (
-	PORT = "6379"
-)
-
 func main() {
+	internal.InitFlags()
+	flag.Parse()
+
 	storageEngine := repository.NewStorageEngine()
 	handler := &conn.HttpHandler{
 		StorageEngine: storageEngine,
 	}
 
-	l, err := net.Listen("tcp", "0.0.0.0:"+PORT)
+	l, err := net.Listen("tcp", "0.0.0.0:"+internal.PORT)
 	if err != nil {
-		fmt.Println("Failed to bind to port " + PORT)
+		fmt.Printf("Failed to bind to port: %s", internal.PORT)
 		os.Exit(1)
 	}
-	fmt.Println("Redis-server listening on: ", PORT)
+	fmt.Printf("Redis-server listening on: %s", internal.PORT)
 	defer l.Close()
 
 	sigChan := make(chan os.Signal, 1)
