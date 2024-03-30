@@ -2,6 +2,8 @@ package internal
 
 import (
 	"log"
+
+	"github.com/codecrafters-io/redis-starter-go/app/internal/parser"
 )
 
 // Request types
@@ -16,7 +18,7 @@ const (
 )
 
 type Request struct {
-	CMD string
+	CMD parser.CMD
 }
 
 // Parses the incoming buffer and returns a Request object
@@ -25,14 +27,17 @@ func ParseRequest(buffer []byte) Request {
 	// remove the prefix and suffix from the raw request
 	// the prefix and suffix are defined by the protocol
 	// and are not part of the actual command
-	log.Println("Raw request: ", raw)
-	if parsed, err := parseRaw(raw); err != nil {
-		log.Println("Error parsing request: ", err)
+	var cmd parser.CMD
+	if parsed, err := parser.ParseArray(raw); err != nil {
+		log.Panicln("Error parsing request: ", err)
 	} else {
-		log.Println("Parsed request: ", parsed)
+		cmd, err = parser.NewCMD(parsed)
+		if err != nil {
+			log.Panicln("Error parsing request: ", err)
+		}
 	}
 
 	return Request{
-		CMD: raw,
+		CMD: cmd,
 	}
 }

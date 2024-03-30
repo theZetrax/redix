@@ -23,7 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("Redis-server listening on: ", PORT)
-	defer l.Close() 
+	defer l.Close()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)

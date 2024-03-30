@@ -1,6 +1,6 @@
 // @author Zablon Dawit <zablon@qebero.dev>
 // @date 2021/08/01
-package internal
+package parser
 
 import (
 	"errors"
@@ -15,14 +15,35 @@ const (
 
 // Types
 const (
-	T_SIMPLE_STRING = '+'
-	T_BULK_STRING   = '$'
-	T_ARRAY         = '*'
-	T_INTEGER       = ':'
+	T_SIMPLE_STRING = '+' // format: +<data>\r\n
+	T_BULK_STRING   = '$' // format: $<length>\r\n<data>\r\n
+	T_ARRAY         = '*' // format: *<count>\r\n<data>\r\n
+	T_INTEGER       = ':' // format: :<value>\r\n
+	T_ERROR         = '-' // format: -<msg>\r\n
 	T_INVALID       = '0'
 )
 
-func parseRaw(raw string) (any, error) {
+// check data type of the provided raw string
+// returns the data type, whether it has meta data and an error if any
+func checkDataType(raw string) (byte, bool, error) {
+	data_type := raw[0]
+
+	switch data_type {
+	case T_ARRAY:
+		return T_ARRAY, true, nil
+	case T_BULK_STRING:
+		return T_BULK_STRING, true, nil
+	case T_SIMPLE_STRING:
+		return T_SIMPLE_STRING, false, nil
+	case T_INTEGER:
+		return T_INTEGER, false, nil
+	default:
+		return T_ERROR, false, errors.New("Invalid raw string")
+	}
+}
+
+// Parse the raw request
+func ParseRaw(raw string) (any, error) {
 	data_type := raw[0]
 	switch data_type {
 	case T_SIMPLE_STRING:
@@ -30,15 +51,19 @@ func parseRaw(raw string) (any, error) {
 	case T_BULK_STRING:
 		return parseBulkString(raw)
 	case T_ARRAY:
-		return parseArray(raw)
+		return ParseArray(raw)
 	case T_INTEGER:
 		return parseInt(raw)
 	default:
-		return nil, errors.New("Invalid raw string")
+		return T_ERROR, errors.New("Invalid raw string")
 	}
 }
 
-func parseArray(raw string) ([]any, error) {
+// Parse a array data struct should be an entry point for
+// incoming requests.
+//
+// request format: *<count><CRLF><...args>
+func ParseArray(raw string) ([]any, error) {
 	size, err := strconv.Atoi(raw[1:2])
 	// split meta & data
 	_, data, found := strings.Cut(raw, CRLF)
@@ -76,7 +101,7 @@ func parseArray(raw string) ([]any, error) {
 					entries = append(entries, parsed_entry)
 					break
 				case T_ARRAY:
-					parsed_entry, err := parseArray(entry_data)
+					parsed_entry, err := ParseArray(entry_data)
 					if err != nil {
 						return nil, err
 					}
@@ -129,23 +154,7 @@ func parseArray(raw string) ([]any, error) {
 	return entries, nil
 }
 
-func checkDataType(raw string) (byte, bool, error) {
-	data_type := raw[0]
-
-	switch data_type {
-	case T_ARRAY:
-		return T_ARRAY, true, nil
-	case T_BULK_STRING:
-		return T_BULK_STRING, true, nil
-	case T_SIMPLE_STRING:
-		return T_SIMPLE_STRING, false, nil
-	case T_INTEGER:
-		return T_INTEGER, false, nil
-	default:
-		return T_INVALID, false, errors.New("Invalid raw string")
-	}
-}
-
+// Parse an integer data struct
 func parseInt(raw string) (int, error) {
 	prefix := raw[0]
 	var data string
@@ -157,6 +166,7 @@ func parseInt(raw string) (int, error) {
 	return strconv.Atoi(data)
 }
 
+// Parse an bulk string data struct
 func parseBulkString(raw string) (string, error) {
 	meta, data, found := strings.Cut(raw, CRLF)
 	if !found {
@@ -171,6 +181,7 @@ func parseBulkString(raw string) (string, error) {
 	return strings.TrimSpace(data[:size]), nil
 }
 
+// Parse a simple string data struct
 func parseSimpleString(raw string) (string, error) {
 	data_type := raw[0]
 	if data_type != T_SIMPLE_STRING {

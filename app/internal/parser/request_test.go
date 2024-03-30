@@ -1,4 +1,4 @@
-package internal
+package parser
 
 import (
 	"fmt"
@@ -107,7 +107,7 @@ func TestParseArray(t *testing.T) {
 	}
 
 	for input, expected := range input_expected_map {
-		result, err := parseArray(input)
+		result, err := ParseArray(input)
 		if err != nil {
 			t.Error(err)
 		}
