@@ -53,13 +53,13 @@ func (h *HttpHandler) handleSet(conn net.Conn, req internal.Request) {
 
 	}
 
-	values = slices.Clone(values[:cmd_start_index])
 	opts := repository.SetOptions{
 		HasTimeout: false,
 	}
 
 	// handle sub commands
 	if cmd_start_index != -1 {
+		values = slices.Clone(values[:cmd_start_index])
 		for k, v := range sub_cmd_map {
 			switch k {
 			case parser.SUB_PX:
