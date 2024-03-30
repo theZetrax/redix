@@ -79,5 +79,3 @@ func (h *HttpHandler) handleEcho(conn net.Conn, req internal.Request) {
 		os.Exit(1)
 	}
 }
-
-

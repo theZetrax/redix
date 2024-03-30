@@ -47,6 +47,9 @@ func (s *StorageEngine) setTimeout(key string, timeout int) {
 
 // ExpiredTimeout checks if the timeout for a key has expired
 func (s *StorageEngine) ExpiredTimeout(key string) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	timeout, ok := s.hasTimeout(key)
 	if !ok {
 		return false
@@ -55,7 +58,7 @@ func (s *StorageEngine) ExpiredTimeout(key string) bool {
 	expired := int(time.Since(timeout.createdAt).Milliseconds()) > timeout.timeout
 
 	// if timed out, delete the key
-	if s.ExpiredTimeout(key) {
+	if expired {
 		delete(s.store, key)
 		delete(s.timeout, key)
 	}
