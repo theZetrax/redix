@@ -1,4 +1,4 @@
-package internal
+package conn
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/parser"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
@@ -35,7 +36,7 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 			os.Exit(1)
 		}
 
-		req := ParseRequest(buf[:rbLen])
+		req := internal.ParseRequest(buf[:rbLen])
 
 		log.Println(req.CMD.CMD, req.CMD.Args)
 
@@ -67,7 +68,7 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 	}
 }
 
-func (h *HttpHandler) handleEcho(conn net.Conn, req Request) {
+func (h *HttpHandler) handleEcho(conn net.Conn, req internal.Request) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 	resp := encoder.NewBulkString(strings.Join(args, " "))
@@ -79,57 +80,4 @@ func (h *HttpHandler) handleEcho(conn net.Conn, req Request) {
 	}
 }
 
-func (h *HttpHandler) handleSet(conn net.Conn, req Request) {
-	args_raw := req.CMD.Args
-	args := encoder.ConvertSliceToStringArray(args_raw)
-	key := args[0]
-	value := args[1:]
 
-	if len(args) < 2 {
-		_, err := conn.Write([]byte(encoder.NewError(errors.New("ERR wrong number of arguments for 'set' command"))))
-		if err != nil {
-			log.Println("Error writing to connection: ", err.Error())
-			os.Exit(1)
-		}
-		return
-	}
-
-	h.StorageEngine.Set(key, strings.Join(value, " "))
-
-	_, err := conn.Write([]byte(encoder.NewSimpleString("OK")))
-	if err != nil {
-		log.Println("Error writing to connection: ", err.Error())
-	}
-}
-
-func (h *HttpHandler) handleGet(conn net.Conn, req Request) {
-	args_raw := req.CMD.Args
-	args := encoder.ConvertSliceToStringArray(args_raw)
-
-	if len(args) != 1 {
-		_, err := conn.Write([]byte(encoder.NewError(errors.New("ERR wrong number of arguments for 'get' command"))))
-		if err != nil {
-			log.Println("Error writing to connection: ", err.Error())
-			os.Exit(1)
-		}
-		return
-	}
-
-	key := args[0]
-
-	value, err := h.StorageEngine.Get(key)
-
-	if err != nil {
-		_, err := conn.Write([]byte(encoder.NewError(err)))
-		if err != nil {
-			log.Println("Error writing to connection: ", err.Error())
-		}
-		return
-	}
-
-	_, err = conn.Write([]byte(encoder.NewBulkString(value)))
-	if err != nil {
-		log.Println("Error writing to connection: ", err.Error())
-		os.Exit(1)
-	}
-}

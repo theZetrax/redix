@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/codecrafters-io/redis-starter-go/app/internal"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/conn"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
@@ -17,7 +17,7 @@ const (
 
 func main() {
 	storageEngine := repository.NewStorageEngine()
-	handler := &internal.HttpHandler{
+	handler := &conn.HttpHandler{
 		StorageEngine: storageEngine,
 	}
 

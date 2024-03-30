@@ -9,13 +9,20 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 )
 
+// commands
 const (
-	CMD_ECHO = "echo"
-	CMD_PING = "ping"
-	CMD_SET  = "set"
-	CMD_GET  = "get"
+	CMD_ECHO = "ECHO"
+	CMD_PING = "PING"
+	CMD_SET  = "SET"
+	CMD_GET  = "GET"
+)
+
+// subcommands
+const (
+	SUB_PX = "PX"
 )
 
 // do not modify this
@@ -26,6 +33,10 @@ var COMMANDS = []string{
 	CMD_SET,
 }
 
+var SUB_COMMANDS = map[string][]string{
+	CMD_SET: {SUB_PX},
+}
+
 type CMD struct {
 	CMD  string
 	Args []any
@@ -33,6 +44,7 @@ type CMD struct {
 
 func NewCMD(raw_cmd []any) (CMD, error) {
 	cmd := reflect.ValueOf(raw_cmd).Index(0).Interface().(string)
+	cmd = strings.ToUpper(cmd) // convert to lowercase
 
 	// check if the command is valid
 	if !slices.Contains(COMMANDS, cmd) {

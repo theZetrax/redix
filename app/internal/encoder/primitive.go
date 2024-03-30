@@ -3,7 +3,9 @@
 // Date: Mar-30-2024
 package encoder
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // ConvertSliceToStringArray converts a slice of unknown types to a slice of strings.
 func ConvertSliceToStringArray(slice []interface{}) []string {

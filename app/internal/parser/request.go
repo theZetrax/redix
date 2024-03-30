@@ -4,7 +4,6 @@ package parser
 
 import (
 	"errors"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -109,7 +108,6 @@ func ParseArray(raw string) ([]any, error) {
 					break
 				default:
 					entry = append(entry, entry_meta, entry_data)
-					log.Println("Entry: ", entry)
 					entries = append(entries, entry)
 					break
 				}
