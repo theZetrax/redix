@@ -22,12 +22,17 @@ func main() {
 		Config:        config,
 	}
 
+	if !config.IsMaster {
+		conn.Handshake(config.ReplicaOf.Raw)
+	}
+
 	l, err := net.Listen("tcp", "0.0.0.0:"+config.Port)
 	if err != nil {
-		fmt.Println("Failed to bind to port: %s", config.Port)
+		fmt.Println("Failed to bind to port:", config.Port)
 		os.Exit(1)
 	}
 	fmt.Printf("Redis-server listening on: %s\n", config.Port)
+
 	defer l.Close()
 
 	sigChan := make(chan os.Signal, 1)

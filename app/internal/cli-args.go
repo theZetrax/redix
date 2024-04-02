@@ -13,9 +13,9 @@ type CLIArgs struct {
 }
 
 type HOST struct {
-	port string
-	host string
-	raw  string
+	Port string
+	Host string
+	Raw  string
 }
 
 func InitFlags() (cli_args CLIArgs) {
@@ -76,8 +76,8 @@ func (ca *CLIArgs) GetReplicaOf() (_ HOST, is_master bool) {
 	}
 
 	return HOST{
-		port: port,
-		host: host,
-		raw:  ca.replica_of,
+		Port: port,
+		Host: host,
+		Raw:  ca.replica_of,
 	}, false
 }
