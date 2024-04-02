@@ -4,6 +4,7 @@
 package conn
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -14,7 +15,17 @@ import (
 )
 
 func (h *HttpHandler) handleInfo(conn net.Conn, _ internal.Request) {
-	resp_raw := []string{"#Replication", "role:master"}
+	var role string
+	if h.Config.IsMaster {
+		role = "master"
+	} else {
+		role = "slave"
+	}
+
+	resp_raw := []string{
+		"#Replication",
+		fmt.Sprintf("role:%s", role),
+	}
 	resp := strings.Join(resp_raw, "\n")
 
 	_, err := conn.Write([]byte(encoder.NewBulkString(resp)))

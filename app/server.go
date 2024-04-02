@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net"
 	"os"
@@ -14,20 +13,21 @@ import (
 )
 
 func main() {
-	internal.InitFlags()
-	flag.Parse()
+	cli_args := internal.InitFlags()
+	config := internal.NewConfig(cli_args)
 
 	storageEngine := repository.NewStorageEngine()
 	handler := &conn.HttpHandler{
 		StorageEngine: storageEngine,
+		Config:        config,
 	}
 
-	l, err := net.Listen("tcp", "0.0.0.0:"+internal.PORT)
+	l, err := net.Listen("tcp", "0.0.0.0:"+config.Port)
 	if err != nil {
-		fmt.Printf("Failed to bind to port: %s", internal.PORT)
+		fmt.Printf("Failed to bind to port: %s", config.Port)
 		os.Exit(1)
 	}
-	fmt.Printf("Redis-server listening on: %s", internal.PORT)
+	fmt.Printf("Redis-server listening on: %s", config.Port)
 	defer l.Close()
 
 	sigChan := make(chan os.Signal, 1)

@@ -16,6 +16,7 @@ import (
 
 type HttpHandler struct {
 	StorageEngine *repository.StorageEngine
+	Config        *internal.Config
 }
 
 func (h *HttpHandler) HandleConnection(conn net.Conn) {
