@@ -19,12 +19,14 @@ type HOST struct {
 }
 
 func InitFlags() (cli_args CLIArgs) {
+	//#region define the flags
 	// port flag
 	flag.StringVar(&cli_args.port, "port", "6379", "Port to listen on, default: 6379")
 	flag.StringVar(&cli_args.replica_of, "p", "6379", "Port to listen on, default: 6379")
 
 	// replicaof
 	flag.StringVar(&cli_args.replica_of, "replicaof", "", "Replicate another Redis instance")
+	//#endregion
 
 	flag.Parse() // parse the flags
 

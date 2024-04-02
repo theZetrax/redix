@@ -25,6 +25,8 @@ func (h *HttpHandler) handleInfo(conn net.Conn, _ internal.Request) {
 	resp_raw := []string{
 		"#Replication",
 		fmt.Sprintf("role:%s", role),
+		fmt.Sprintf("master_replid:%s", h.Config.ReplId),
+		fmt.Sprintf("master_repl_offset:%s", h.Config.ReplOffset),
 	}
 	resp := strings.Join(resp_raw, "\n")
 
