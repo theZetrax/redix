@@ -18,7 +18,7 @@ func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request) {
 }
 
 func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request) {
-	_, err := conn.Write([]byte(encoder.NewSimpleString("FULLRESYNC <REPL_ID> 0")))
+	_, err := conn.Write([]byte(encoder.NewSimpleString("FULLRESYNC 1 0")))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
 		os.Exit(1)
