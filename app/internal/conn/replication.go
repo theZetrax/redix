@@ -16,3 +16,11 @@ func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request) {
 		os.Exit(1)
 	}
 }
+
+func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request) {
+	_, err := conn.Write([]byte(encoder.NewSimpleString("FULLRESYNC <REPL_ID> 0")))
+	if err != nil {
+		log.Println("Error writing to connection: ", err.Error())
+		os.Exit(1)
+	}
+}

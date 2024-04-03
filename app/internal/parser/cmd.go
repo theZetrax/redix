@@ -20,6 +20,7 @@ const (
 	CMD_GET      = "GET"
 	CMD_INFO     = "INFO"
 	CMD_REPLCONF = "REPLCONF"
+	CMD_PSYNC    = "PSYNC"
 )
 
 // subcommands
@@ -35,6 +36,7 @@ var COMMANDS = []string{
 	CMD_SET,
 	CMD_INFO,
 	CMD_REPLCONF,
+	CMD_PSYNC,
 }
 
 var SUB_COMMANDS = map[string][]string{

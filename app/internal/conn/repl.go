@@ -24,10 +24,10 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 	defer conn.Close()
 
 	messages := []string{
-		encoder.NewArray(encoder.NewBulkString("PING")), // ping
+		encoder.NewArray(encoder.NewBulkString(parser.CMD_PING)), // ping
 		// replication configuration
 		encoder.NewArray(
-			encoder.NewBulkString("REPLCONF"),
+			encoder.NewBulkString(parser.CMD_REPLCONF),
 			encoder.NewBulkString("listening-port"),
 			encoder.NewBulkString(port),
 		),
@@ -36,6 +36,11 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 			encoder.NewBulkString("REPLCONF"),
 			encoder.NewBulkString("capa"),
 			encoder.NewBulkString("psync2"),
+		),
+		encoder.NewArray(
+			encoder.NewBulkString(parser.CMD_PSYNC),
+			encoder.NewBulkString("?"),
+			encoder.NewBulkString("-1"),
 		),
 	}
 
