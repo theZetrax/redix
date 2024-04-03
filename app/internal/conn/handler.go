@@ -34,7 +34,7 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 		}
 		if readErr != nil {
 			log.Println("Error reading from connection: ", readErr.Error())
-			os.Exit(1)
+			return
 		}
 
 		req := internal.ParseRequest(buf[:rbLen])
@@ -60,6 +60,9 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 			break
 		case parser.CMD_INFO:
 			h.handleInfo(conn, req)
+			break
+		case parser.CMD_REPLCONF:
+			h.handleReplConf(conn, req)
 			break
 		default:
 			log.Println("Unknown command: ", cmd)

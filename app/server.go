@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -23,7 +24,12 @@ func main() {
 	}
 
 	if !config.IsMaster {
-		conn.Handshake(config.ReplicaOf.Raw)
+		// replication connection
+		_, err := conn.Handshake(config.ReplicaOf.Raw, config.Port)
+		if err != nil {
+			log.Printf("Error connecting to master[%s]: %s\n", config.ReplicaOf.Raw, err.Error())
+			os.Exit(1)
+		}
 	}
 
 	l, err := net.Listen("tcp", "0.0.0.0:"+config.Port)

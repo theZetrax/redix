@@ -186,5 +186,5 @@ func parseSimpleString(raw string) (string, error) {
 		return "", errors.New("Invalid Simple String")
 	}
 
-	return strings.TrimSpace(raw)[1:], nil
+	return strings.ReplaceAll(raw, CRLF, "")[1:], nil
 }
