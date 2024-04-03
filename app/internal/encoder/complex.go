@@ -11,6 +11,14 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 )
 
+func NewBinaryString(value []byte) string {
+	str := strings.Join([]string{
+		string(decoder.T_BULK_STRING) + fmt.Sprint(len(value)),
+		string(value),
+	}, decoder.CRLF)
+	return str
+}
+
 func NewBulkString(value string) string {
 	str := strings.Join([]string{
 		string(decoder.T_BULK_STRING) + fmt.Sprint(len(value)),

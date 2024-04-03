@@ -33,7 +33,7 @@ func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request) {
 	}
 
 	// Send RDB file to replica
-	_, err = conn.Write(rdb_bin)
+	_, err = conn.Write([]byte(encoder.NewBinaryString(rdb_bin)))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
 		os.Exit(1)
