@@ -1,6 +1,6 @@
 // @author Zablon Dawit <zablon@qebero.dev>
 // @date 2021/08/01
-package parser
+package decoder
 
 import (
 	"errors"

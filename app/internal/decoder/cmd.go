@@ -3,7 +3,7 @@
 // The command should be the first element of the raw_cmd slice and the arguments should be the rest of the elements.
 // AUTHOR: Zablon Dawit
 // DATE: Mar-30-2024
-package parser
+package decoder
 
 import (
 	"fmt"

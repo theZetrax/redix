@@ -8,37 +8,37 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codecrafters-io/redis-starter-go/app/internal/parser"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 )
 
 func NewBulkString(value string) string {
 	str := strings.Join([]string{
-		string(parser.T_BULK_STRING) + fmt.Sprint(len(value)),
+		string(decoder.T_BULK_STRING) + fmt.Sprint(len(value)),
 		value,
-	}, parser.CRLF) + parser.CRLF
+	}, decoder.CRLF) + decoder.CRLF
 	return str
 }
 
 func NewError(err error) string {
-	return string(parser.T_ERROR) + err.Error() + parser.CRLF
+	return string(decoder.T_ERROR) + err.Error() + decoder.CRLF
 }
 
 func NewSimpleString(value string) string {
-	return string(parser.T_SIMPLE_STRING) + value + parser.CRLF
+	return string(decoder.T_SIMPLE_STRING) + value + decoder.CRLF
 }
 
 func NewNil() string {
-	return string(parser.T_BULK_STRING) + fmt.Sprint(-1) + parser.CRLF
+	return string(decoder.T_BULK_STRING) + fmt.Sprint(-1) + decoder.CRLF
 }
 
 func NewArray(entries ...string) (raw string) {
 	size := fmt.Sprint(len(entries))
-	raw = string(parser.T_ARRAY) + size + parser.CRLF
+	raw = string(decoder.T_ARRAY) + size + decoder.CRLF
 	for _, entry := range entries {
-		hasSuffix := strings.HasSuffix(entry, parser.CRLF)
+		hasSuffix := strings.HasSuffix(entry, decoder.CRLF)
 		raw += entry
 		if !hasSuffix {
-			raw += parser.CRLF
+			raw += decoder.CRLF
 		}
 	}
 

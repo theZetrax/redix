@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
-	"github.com/codecrafters-io/redis-starter-go/app/internal/parser"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
@@ -42,29 +42,29 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 		log.Println(req.CMD.CMD, req.CMD.Args)
 
 		switch cmd := req.CMD.CMD; cmd {
-		case parser.CMD_PING:
+		case decoder.CMD_PING:
 			_, err := conn.Write([]byte("+PONG\r\n"))
 			if err != nil {
 				log.Println("Error writing to connection: ", err.Error())
 				os.Exit(1)
 			}
 			break
-		case parser.CMD_ECHO:
+		case decoder.CMD_ECHO:
 			h.handleEcho(conn, req)
 			break
-		case parser.CMD_SET:
+		case decoder.CMD_SET:
 			h.handleSet(conn, req)
 			break
-		case parser.CMD_GET:
+		case decoder.CMD_GET:
 			h.handleGet(conn, req)
 			break
-		case parser.CMD_INFO:
+		case decoder.CMD_INFO:
 			h.handleInfo(conn, req)
 			break
-		case parser.CMD_REPLCONF:
+		case decoder.CMD_REPLCONF:
 			h.handleReplConf(conn, req)
 			break
-		case parser.CMD_PSYNC:
+		case decoder.CMD_PSYNC:
 			h.handlePsync(conn, req)
 			break
 		default:

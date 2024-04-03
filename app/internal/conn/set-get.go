@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
-	"github.com/codecrafters-io/redis-starter-go/app/internal/parser"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
@@ -34,7 +34,7 @@ func (h *HttpHandler) handleSet(conn net.Conn, req internal.Request) {
 	sub_cmd_map := make(map[string]any) // map to store sub commands
 	cmd_start_index := -1
 
-	for _, sub_cmd := range parser.SUB_COMMANDS[parser.CMD_SET] {
+	for _, sub_cmd := range decoder.SUB_COMMANDS[decoder.CMD_SET] {
 		for idx, value := range values {
 			if strings.ToUpper(value) == sub_cmd {
 				if idx+1 >= len(values) {
@@ -62,7 +62,7 @@ func (h *HttpHandler) handleSet(conn net.Conn, req internal.Request) {
 		values = slices.Clone(values[:cmd_start_index])
 		for k, v := range sub_cmd_map {
 			switch k {
-			case parser.SUB_PX:
+			case decoder.SUB_PX:
 				// handle px sub command
 				log.Print("Handling PX command: ", v)
 				timeout, err := strconv.Atoi(reflect.ValueOf(v).String())

@@ -11,8 +11,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
-	"github.com/codecrafters-io/redis-starter-go/app/internal/parser"
 )
 
 // handshake with master node.
@@ -24,10 +24,10 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 	defer conn.Close()
 
 	messages := []string{
-		encoder.NewArray(encoder.NewBulkString(parser.CMD_PING)), // ping
+		encoder.NewArray(encoder.NewBulkString(decoder.CMD_PING)), // ping
 		// replication configuration
 		encoder.NewArray(
-			encoder.NewBulkString(parser.CMD_REPLCONF),
+			encoder.NewBulkString(decoder.CMD_REPLCONF),
 			encoder.NewBulkString("listening-port"),
 			encoder.NewBulkString(port),
 		),
@@ -38,7 +38,7 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 			encoder.NewBulkString("psync2"),
 		),
 		encoder.NewArray(
-			encoder.NewBulkString(parser.CMD_PSYNC),
+			encoder.NewBulkString(decoder.CMD_PSYNC),
 			encoder.NewBulkString("?"),
 			encoder.NewBulkString("-1"),
 		),
@@ -57,8 +57,8 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 		}
 
 		raw := string(buf[:read_bytes])
-		log.Printf("Master[%s] raw response: %s\n", master_host, strings.ReplaceAll(raw, parser.CRLF, "\\r\\n"))
-		if ping_response, err := parser.ParseRaw(raw); err != nil {
+		log.Printf("Master[%s] raw response: %s\n", master_host, strings.ReplaceAll(raw, decoder.CRLF, "\\r\\n"))
+		if ping_response, err := decoder.ParseRaw(raw); err != nil {
 			// Error failed to recieve response from master
 			return nil, errors.New("failed to handshake with master")
 		} else {
