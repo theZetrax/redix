@@ -4,7 +4,6 @@
 package service
 
 import (
-	"errors"
 	"io"
 	"log"
 	"net"
@@ -21,8 +20,8 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
 
+	// messages to send to the master
 	messages := []string{
 		encoder.NewArray(encoder.NewBulkString(decoder.CMD_PING)), // ping
 		// replication configuration
@@ -45,6 +44,7 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 	}
 
 	for _, message := range messages {
+		// write the message to the master
 		if _, err = io.Copy(conn, strings.NewReader(message)); err != nil {
 			log.Printf("Error writing to master[%s]: %s\n", master_host, err.Error())
 			os.Exit(1)
@@ -58,21 +58,8 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 
 		raw := string(buf[:read_bytes])
 		log.Printf("Master[%s] raw response: %s\n", master_host, strings.ReplaceAll(raw, decoder.CRLF, "\\r\\n"))
-		if ping_response, err := decoder.ParseRaw(raw); err != nil {
-			// Error failed to recieve response from master
-			return nil, errors.New("failed to handshake with master")
-		} else {
-			switch ping_response.(string) {
-			case "PONG", "OK":
-				continue
-			default:
-				return nil, err
-			}
-		}
-
 	}
 
 	log.Printf("Connected to master: %s\n", master_host)
-
 	return conn, nil
 }

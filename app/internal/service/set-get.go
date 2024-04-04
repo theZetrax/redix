@@ -16,7 +16,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
-func (h *HttpHandler) handleSet(conn net.Conn, req internal.Request) {
+func (h *HttpHandler) handleSet(conn net.Conn, req internal.Request, _ HandlerOptions) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 
@@ -89,7 +89,7 @@ func (h *HttpHandler) handleSet(conn net.Conn, req internal.Request) {
 	}
 }
 
-func (h *HttpHandler) handleGet(conn net.Conn, req internal.Request) {
+func (h *HttpHandler) handleGet(conn net.Conn, req internal.Request, _ HandlerOptions) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 

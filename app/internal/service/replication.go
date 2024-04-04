@@ -10,7 +10,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
 )
 
-func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request) {
+func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request, _ HandlerOptions) {
 	_, err := conn.Write([]byte(encoder.NewSimpleString("OK")))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
@@ -18,7 +18,7 @@ func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request) {
 	}
 }
 
-func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request) {
+func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request, _ HandlerOptions) {
 	_, err := conn.Write([]byte(encoder.NewSimpleString("FULLRESYNC 1 0")))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())

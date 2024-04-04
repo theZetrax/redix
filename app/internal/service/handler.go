@@ -14,6 +14,11 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
+type HandlerOptions struct {
+	IsMaster bool
+}
+type HandlerFunc func(conn net.Conn, req internal.Request, opts HandlerOptions)
+
 type HttpHandler struct {
 	StorageEngine *repository.StorageEngine
 	Config        *internal.Config
@@ -41,32 +46,23 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 
 		log.Println(req.CMD.CMD, req.CMD.Args)
 
+		var handler HandlerFunc = nil
+
 		switch cmd := req.CMD.CMD; cmd {
 		case decoder.CMD_PING:
-			_, err := conn.Write([]byte("+PONG\r\n"))
-			if err != nil {
-				log.Println("Error writing to connection: ", err.Error())
-				os.Exit(1)
-			}
-			break
+			handler = h.handlePing
 		case decoder.CMD_ECHO:
-			h.handleEcho(conn, req)
-			break
+			handler = h.handleEcho
 		case decoder.CMD_SET:
-			h.handleSet(conn, req)
-			break
+			handler = h.handleSet
 		case decoder.CMD_GET:
-			h.handleGet(conn, req)
-			break
+			handler = h.handleGet
 		case decoder.CMD_INFO:
-			h.handleInfo(conn, req)
-			break
+			handler = h.handleInfo
 		case decoder.CMD_REPLCONF:
-			h.handleReplConf(conn, req)
-			break
+			handler = h.handleReplConf
 		case decoder.CMD_PSYNC:
-			h.handlePsync(conn, req)
-			break
+			handler = h.handlePsync
 		default:
 			log.Println("Unknown command: ", cmd)
 			_, err := conn.Write([]byte(encoder.NewError(errors.New("ERR unknown command '" + cmd + "'"))))
@@ -75,15 +71,34 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 				os.Exit(1)
 			}
 		}
+
+		if handler != nil {
+			// handle the request
+			handler(
+				conn,
+				req,
+				HandlerOptions{
+					IsMaster: h.Config.IsMaster,
+				},
+			)
+		}
 	}
 }
 
-func (h *HttpHandler) handleEcho(conn net.Conn, req internal.Request) {
+func (h *HttpHandler) handleEcho(conn net.Conn, req internal.Request, _ HandlerOptions) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 	resp := encoder.NewBulkString(strings.Join(args, " "))
 
 	_, err := conn.Write([]byte(resp))
+	if err != nil {
+		log.Println("Error writing to connection: ", err.Error())
+		os.Exit(1)
+	}
+}
+
+func (h *HttpHandler) handlePing(conn net.Conn, req internal.Request, _ HandlerOptions) {
+	_, err := conn.Write([]byte("+PONG\r\n"))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
 		os.Exit(1)

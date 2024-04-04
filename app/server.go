@@ -23,9 +23,13 @@ func main() {
 		Config:        config,
 	}
 
+	// connection instance
+	var connInstance net.Conn
+	var err error
+
 	if !config.IsMaster {
 		// replication connection
-		_, err := service.Handshake(config.ReplicaOf.Raw, config.Port)
+		connInstance, err = service.Handshake(config.ReplicaOf.Raw, config.Port)
 		if err != nil {
 			log.Printf("Error connecting to master[%s]: %s\n", config.ReplicaOf.Raw, err.Error())
 			os.Exit(1)
@@ -46,13 +50,17 @@ func main() {
 
 	go func() {
 		for {
-			conn, err := l.Accept()
-			if err != nil {
-				fmt.Println("Error accepting connection: ", err.Error())
-				os.Exit(1)
+			// accept connection if master node
+			// else use the replication connection
+			if config.IsMaster {
+				connInstance, err = l.Accept()
+				if err != nil {
+					fmt.Println("Error accepting connection: ", err.Error())
+					os.Exit(1)
+				}
 			}
 
-			go handler.HandleConnection(conn)
+			go handler.HandleConnection(connInstance)
 		}
 	}()
 
