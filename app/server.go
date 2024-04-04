@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
-	"github.com/codecrafters-io/redis-starter-go/app/internal/conn"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/service"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
@@ -18,14 +18,14 @@ func main() {
 	config := internal.NewConfig(cli_args)
 
 	storageEngine := repository.NewStorageEngine()
-	handler := &conn.HttpHandler{
+	handler := &service.HttpHandler{
 		StorageEngine: storageEngine,
 		Config:        config,
 	}
 
 	if !config.IsMaster {
 		// replication connection
-		_, err := conn.Handshake(config.ReplicaOf.Raw, config.Port)
+		_, err := service.Handshake(config.ReplicaOf.Raw, config.Port)
 		if err != nil {
 			log.Printf("Error connecting to master[%s]: %s\n", config.ReplicaOf.Raw, err.Error())
 			os.Exit(1)

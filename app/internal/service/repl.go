@@ -1,7 +1,7 @@
 // DESCRIPTION: This file contains the implementation of the replication protocol.
 // AUTHOR: Zablon Dawit
 // Date: APR-01-2024
-package conn
+package service
 
 import (
 	"errors"

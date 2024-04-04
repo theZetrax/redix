@@ -1,7 +1,7 @@
 // Responsible for handling the INFO command
 // Author: Zablon Dawit
 // Date: Mar-30-2024
-package conn
+package service
 
 import (
 	"fmt"
