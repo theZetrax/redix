@@ -13,9 +13,9 @@ type CLIArgs struct {
 }
 
 type HOST struct {
-	Port string
-	Host string
-	Raw  string
+	Raw  string // format: host:port
+	Host string // format: host
+	Port string // format: port
 }
 
 func InitFlags() (cli_args CLIArgs) {

@@ -36,11 +36,17 @@ func main() {
 		}
 	}
 
-	l, err := net.Listen("tcp", "0.0.0.0:"+config.Port)
+	var l net.Listener
+	if config.IsMaster {
+		l, err = net.Listen("tcp", "0.0.0.0:"+config.Port)
+	} else {
+		l, err = net.Listen("tcp", config.ReplicaOf.Raw)
+	}
 	if err != nil {
 		fmt.Println("Failed to bind to port:", config.Port)
 		os.Exit(1)
 	}
+
 	fmt.Printf("Redis-server listening on: %s\n", config.Port)
 
 	defer l.Close()
@@ -52,12 +58,10 @@ func main() {
 		for {
 			// accept connection if master node
 			// else use the replication connection
-			if config.IsMaster {
-				connInstance, err = l.Accept()
-				if err != nil {
-					fmt.Println("Error accepting connection: ", err.Error())
-					os.Exit(1)
-				}
+			connInstance, err = l.Accept()
+			if err != nil {
+				fmt.Println("Error accepting connection: ", err.Error())
+				os.Exit(1)
 			}
 
 			go handler.HandleConnection(connInstance)
