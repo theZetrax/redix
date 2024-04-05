@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request, _ HandlerOptions) {
+func (h *ReqHandler) handleReplConf(conn net.Conn, _ internal.Request, _ RequestHandlerOptions) {
 	_, err := conn.Write([]byte(encoder.NewSimpleString("OK")))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
@@ -20,7 +20,7 @@ func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request, _ Handle
 	}
 }
 
-func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request, _ HandlerOptions) {
+func (h *ReqHandler) handlePsync(conn net.Conn, _ internal.Request, handlerOpts RequestHandlerOptions) {
 	// generate a unique conn_id for the connection
 	conn_id := uuid.New().String()
 
@@ -30,6 +30,8 @@ func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request, _ HandlerOp
 	_, err := conn.Write([]byte(full_resync_resp))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
+
+		conn.Close()
 		os.Exit(1)
 	}
 
@@ -37,6 +39,8 @@ func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request, _ HandlerOp
 	rdb_bin, err := decoder.DecodeHexToBinary(rdb_hex)
 	if err != nil {
 		log.Println("Error decoding hex to binary: ", err.Error())
+
+		conn.Close()
 		os.Exit(1)
 	}
 
@@ -44,10 +48,12 @@ func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request, _ HandlerOp
 	_, err = conn.Write([]byte(encoder.NewBinaryString(rdb_bin)))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
+
+		conn.Close()
 		os.Exit(1)
 	}
 
 	// if connection is not closed, append to connection pool
+	handlerOpts.ShouldClose = false
 	h.AddToConnPool(conn, conn_id)
-	conn.LocalAddr()
 }

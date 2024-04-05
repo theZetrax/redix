@@ -5,7 +5,6 @@ package repository
 
 import (
 	"errors"
-	"log"
 	"sync"
 	"time"
 )
@@ -67,8 +66,6 @@ func (s *StorageEngine) ExpiredTimeout(key string) bool {
 }
 
 func (s *StorageEngine) Set(key, value string, opts SetOptions) {
-	log.Println("Setting key: ", key, " with value: ", value, " and options", opts)
-
 	s.store[key] = value
 	if opts.HasTimeout {
 		s.setTimeout(key, opts.Timeout)

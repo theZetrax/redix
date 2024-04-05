@@ -14,29 +14,39 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
-type HandlerOptions struct {
-	IsMaster bool
+type RequestHandlerOptions struct {
+	IsMaster    bool
+	ShouldClose bool
 }
-type HandlerFunc func(conn net.Conn, req internal.Request, opts HandlerOptions)
+type ReqHandlerFunc func(conn net.Conn, req internal.Request, opts RequestHandlerOptions)
 
-type HttpHandler struct {
-	StorageEngine     *repository.StorageEngine
-	Config            *internal.Config
-	ActiveConnections map[string]net.Conn
-	ShouldClose       bool
+// ReqHandler handles incoming requests
+// and delegates them to the appropriate handler
+type ReqHandler struct {
+	StorageEngine *repository.StorageEngine
+	Config        *internal.Config
+	ConnPool      map[string]net.Conn // active connection pool
 }
 
-func (h *HttpHandler) HandleConnection(conn net.Conn) {
+func (h *ReqHandler) HandleRequest(
+	conn net.Conn,
+	buf *[]byte, // buffer
+	read int, // read bytes length
+	opts RequestHandlerOptions, // handler options
+) {
 	// by default should close the connection
-	h.ShouldClose = true
+	if opts.ShouldClose {
+		defer conn.Close()
+	}
 
 	var readErr error
+	init_loop := true // initial loop
+READLOOP:
 	for readErr != io.EOF {
-		buf := make([]byte, 1024)
-
-		// request buffer length
-		var rbLen int
-		rbLen, readErr = conn.Read(buf)
+		if !init_loop {
+			read, readErr = conn.Read(*buf)
+		}
+		init_loop = false
 
 		if readErr == io.EOF {
 			break
@@ -47,11 +57,11 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 		}
 
 		// parse the request
-		req := internal.ParseRequest(buf[:rbLen])
+		req := internal.ParseRequest((*buf)[:read])
 		log.Println(req.CMD.CMD, req.CMD.Args)
 
 		// find the handler for the request
-		var handler HandlerFunc = nil
+		var handler ReqHandlerFunc = nil
 		switch cmd := req.CMD.CMD; cmd {
 		case decoder.CMD_PING:
 			handler = h.handlePing
@@ -77,44 +87,44 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 			_, err := conn.Write([]byte(err_resp))
 			if err != nil {
 				log.Println("Error writing to connection: ", err.Error())
-				os.Exit(1)
+				break READLOOP // break the loop
 			}
 		}
 
 		// handle the request
-		if handler != nil {
-			handler(
-				conn,
-				req,
-				HandlerOptions{
-					IsMaster: h.Config.IsMaster,
-				},
-			)
+		if handler == nil {
+			return
 		}
-	}
 
-	// close the connection if the flag is set
-	if h.ShouldClose {
-		conn.Close()
+		if IsDelegateReq(req.CMD) {
+			for _, conn := range h.ConnPool {
+				conn.Write(*buf)
+			}
+		}
+
+		handler(
+			conn,
+			req,
+			opts,
+		)
 	}
 }
 
 // Close closes all active connections to the server
 // and cleans up resources
-func (h *HttpHandler) Close() {
-	for _, conn := range h.ActiveConnections {
+func (h *ReqHandler) Close() {
+	for _, conn := range h.ConnPool {
 		conn.Close()
 	}
 }
 
 // AddToConnPool adds a connection to the active connection pool
-func (h *HttpHandler) AddToConnPool(conn net.Conn, uuid string) {
-	h.ShouldClose = false // do not close the connection
-	h.ActiveConnections[uuid] = conn
+func (h *ReqHandler) AddToConnPool(conn net.Conn, uuid string) {
+	h.ConnPool[uuid] = conn
 }
 
-func (h *HttpHandler) handleEcho(
-	conn net.Conn, req internal.Request, _ HandlerOptions,
+func (h *ReqHandler) handleEcho(
+	conn net.Conn, req internal.Request, _ RequestHandlerOptions,
 ) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
@@ -127,7 +137,9 @@ func (h *HttpHandler) handleEcho(
 	}
 }
 
-func (h *HttpHandler) handlePing(conn net.Conn, req internal.Request, _ HandlerOptions) {
+func (h *ReqHandler) handlePing(
+	conn net.Conn, req internal.Request, _ RequestHandlerOptions,
+) {
 	_, err := conn.Write([]byte("+PONG\r\n"))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())

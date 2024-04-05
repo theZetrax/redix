@@ -14,7 +14,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
 )
 
-func (h *HttpHandler) handleInfo(conn net.Conn, _ internal.Request, _ HandlerOptions) {
+func (h *ReqHandler) handleInfo(conn net.Conn, _ internal.Request, _ RequestHandlerOptions) {
 	var role string
 	if h.Config.IsMaster {
 		role = "master"
