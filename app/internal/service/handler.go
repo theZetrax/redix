@@ -26,6 +26,7 @@ type HttpHandler struct {
 
 func (h *HttpHandler) HandleConnection(conn net.Conn) {
 	defer conn.Close()
+
 	var readErr error
 	for readErr != io.EOF {
 		buf := make([]byte, 1024)
@@ -72,8 +73,8 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 			}
 		}
 
+		// handle the request
 		if handler != nil {
-			// handle the request
 			handler(
 				conn,
 				req,

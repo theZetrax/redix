@@ -46,7 +46,11 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 	for _, message := range messages {
 		// write the message to the master
 		if _, err = io.Copy(conn, strings.NewReader(message)); err != nil {
-			log.Printf("Error writing to master[%s]: %s\n", master_host, err.Error())
+			log.Printf(
+				"Error writing to master[%s]: %s\n",
+				master_host,
+				err.Error(),
+			)
 			os.Exit(1)
 		}
 
@@ -57,7 +61,11 @@ func Handshake(master_host string, port string) (conn net.Conn, err error) {
 		}
 
 		raw := string(buf[:read_bytes])
-		log.Printf("Master[%s] raw response: %s\n", master_host, strings.ReplaceAll(raw, decoder.CRLF, "\\r\\n"))
+		log.Printf(
+			"Master[%s] raw response: %s\n",
+			master_host,
+			strings.ReplaceAll(raw, decoder.CRLF, "\\r\\n"),
+		)
 	}
 
 	log.Printf("Connected to master: %s\n", master_host)

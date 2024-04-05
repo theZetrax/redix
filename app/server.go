@@ -54,19 +54,17 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	go func() {
-		for {
-			// accept connection if master node
-			// else use the replication connection
-			connInstance, err = l.Accept()
-			if err != nil {
-				fmt.Println("Error accepting connection: ", err.Error())
-				os.Exit(1)
-			}
-
-			go handler.HandleConnection(connInstance)
+	for {
+		// accept connection if master node
+		// else use the replication connection
+		connInstance, err = l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
 		}
-	}()
+
+		go handler.HandleConnection(connInstance)
+	}
 
 	<-sigChan
 }
