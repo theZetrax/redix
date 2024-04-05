@@ -20,12 +20,15 @@ type HandlerOptions struct {
 type HandlerFunc func(conn net.Conn, req internal.Request, opts HandlerOptions)
 
 type HttpHandler struct {
-	StorageEngine *repository.StorageEngine
-	Config        *internal.Config
+	StorageEngine     *repository.StorageEngine
+	Config            *internal.Config
+	ActiveConnections map[string]net.Conn
+	ShouldClose       bool
 }
 
 func (h *HttpHandler) HandleConnection(conn net.Conn) {
-	defer conn.Close()
+	// by default should close the connection
+	h.ShouldClose = true
 
 	var readErr error
 	for readErr != io.EOF {
@@ -43,12 +46,12 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 			return
 		}
 
+		// parse the request
 		req := internal.ParseRequest(buf[:rbLen])
-
 		log.Println(req.CMD.CMD, req.CMD.Args)
 
+		// find the handler for the request
 		var handler HandlerFunc = nil
-
 		switch cmd := req.CMD.CMD; cmd {
 		case decoder.CMD_PING:
 			handler = h.handlePing
@@ -66,7 +69,12 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 			handler = h.handlePsync
 		default:
 			log.Println("Unknown command: ", cmd)
-			_, err := conn.Write([]byte(encoder.NewError(errors.New("ERR unknown command '" + cmd + "'"))))
+			err_resp := encoder.NewError(
+				errors.New("ERR unknown command '" + cmd + "'"),
+			)
+
+			// write the error response
+			_, err := conn.Write([]byte(err_resp))
 			if err != nil {
 				log.Println("Error writing to connection: ", err.Error())
 				os.Exit(1)
@@ -84,9 +92,30 @@ func (h *HttpHandler) HandleConnection(conn net.Conn) {
 			)
 		}
 	}
+
+	// close the connection if the flag is set
+	if h.ShouldClose {
+		conn.Close()
+	}
 }
 
-func (h *HttpHandler) handleEcho(conn net.Conn, req internal.Request, _ HandlerOptions) {
+// Close closes all active connections to the server
+// and cleans up resources
+func (h *HttpHandler) Close() {
+	for _, conn := range h.ActiveConnections {
+		conn.Close()
+	}
+}
+
+// AddToConnPool adds a connection to the active connection pool
+func (h *HttpHandler) AddToConnPool(conn net.Conn, uuid string) {
+	h.ShouldClose = false // do not close the connection
+	h.ActiveConnections[uuid] = conn
+}
+
+func (h *HttpHandler) handleEcho(
+	conn net.Conn, req internal.Request, _ HandlerOptions,
+) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 	resp := encoder.NewBulkString(strings.Join(args, " "))

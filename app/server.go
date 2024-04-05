@@ -36,12 +36,7 @@ func main() {
 		}
 	}
 
-	var l net.Listener
-	if config.IsMaster {
-		l, err = net.Listen("tcp", "0.0.0.0:"+config.Port)
-	} else {
-		l, err = net.Listen("tcp", config.ReplicaOf.Raw)
-	}
+	l, err := net.Listen("tcp", "0.0.0.0:"+config.Port)
 	if err != nil {
 		fmt.Println("Failed to bind to port:", config.Port)
 		os.Exit(1)
@@ -50,21 +45,25 @@ func main() {
 	fmt.Printf("Redis-server listening on: %s\n", config.Port)
 
 	defer l.Close()
+	defer handler.Close()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	for {
-		// accept connection if master node
-		// else use the replication connection
-		connInstance, err = l.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection: ", err.Error())
-			os.Exit(1)
-		}
+	// handle incoming connections
+	go func() {
+		for {
+			// accept connection if master node
+			// else use the replication connection
+			connInstance, err = l.Accept()
+			if err != nil {
+				fmt.Println("Error accepting connection: ", err.Error())
+				os.Exit(1)
+			}
 
-		go handler.HandleConnection(connInstance)
-	}
+			go handler.HandleConnection(connInstance)
+		}
+	}()
 
 	<-sigChan
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
+	"github.com/google/uuid"
 )
 
 func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request, _ HandlerOptions) {
@@ -19,7 +21,13 @@ func (h *HttpHandler) handleReplConf(conn net.Conn, _ internal.Request, _ Handle
 }
 
 func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request, _ HandlerOptions) {
-	_, err := conn.Write([]byte(encoder.NewSimpleString("FULLRESYNC 1 0")))
+	// generate a unique conn_id for the connection
+	conn_id := uuid.New().String()
+
+	full_resync_resp := encoder.NewSimpleString(
+		fmt.Sprintf("FULLRESYNC %v 0", conn_id),
+	)
+	_, err := conn.Write([]byte(full_resync_resp))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
 		os.Exit(1)
@@ -38,4 +46,8 @@ func (h *HttpHandler) handlePsync(conn net.Conn, _ internal.Request, _ HandlerOp
 		log.Println("Error writing to connection: ", err.Error())
 		os.Exit(1)
 	}
+
+	// if connection is not closed, append to connection pool
+	h.AddToConnPool(conn, conn_id)
+	conn.LocalAddr()
 }
