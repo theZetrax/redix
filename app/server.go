@@ -6,8 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/service"
@@ -24,11 +22,7 @@ func main() {
 	var connInstance net.Conn
 	var err error
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
 	if !config.IsMaster {
-		// replication connection
 		connInstance, err = service.Handshake(config.ReplicaOf.Raw, config.Port)
 		if err != nil {
 			log.Printf("Error connecting to master[%s]: %s\n", config.ReplicaOf.Raw, err.Error())
@@ -42,22 +36,20 @@ func main() {
 
 		// handle incoming responses from master
 		// and update the storage engine
-		go func() {
-			for {
-				var read int
-				buf := make([]byte, 1024)
-				read, err = connInstance.Read(buf)
-				if err != nil {
-					if err == io.EOF {
-						break
-					}
-					log.Println("Error reading from connection: ", err.Error())
-					os.Exit(1)
+		for {
+			var read int
+			buf := make([]byte, 1024)
+			read, err = connInstance.Read(buf)
+			if err != nil {
+				if err == io.EOF {
+					break
 				}
-
-				resp_handler.HandleResponse(buf[:read])
+				log.Println("Error reading from connection: ", err.Error())
+				os.Exit(1)
 			}
-		}()
+
+			resp_handler.HandleResponse(buf[:read])
+		}
 
 	} else {
 		req_handler := &service.ReqHandler{
@@ -78,39 +70,36 @@ func main() {
 		defer req_handler.Close()
 
 		// handle incoming connections
-		go func() {
-			for {
-				// accept connection if master node
-				// else use the replication connection
-				connInstance, err = l.Accept()
-				if err != nil {
-					fmt.Println("Error accepting connection: ", err.Error())
-					os.Exit(1)
-				}
-
-				var read int // read bytes length
-				buf := make([]byte, 1024)
-				read, err = connInstance.Read(buf)
-				if err != nil {
-					fmt.Println("Error reading from connection: ", err.Error())
-					connInstance.Close()
-					os.Exit(1)
-				}
-
-				shouldClose := service.IsLongLived(buf, read)
-
-				go req_handler.HandleRequest(
-					connInstance,
-					&buf,
-					read,
-					service.RequestHandlerOptions{
-						IsMaster:    config.IsMaster,
-						ShouldClose: shouldClose,
-					},
-				)
+		for {
+			// accept connection if master node
+			// else use the replication connection
+			connInstance, err = l.Accept()
+			if err != nil {
+				fmt.Println("Error accepting connection: ", err.Error())
+				os.Exit(1)
 			}
-		}()
+
+			var read int // read bytes length
+			buf := make([]byte, 1024)
+			read, err = connInstance.Read(buf)
+			if err != nil {
+				fmt.Println("Error reading from connection: ", err.Error())
+				connInstance.Close()
+				os.Exit(1)
+			}
+
+			shouldClose := service.IsLongLived(buf, read)
+
+			go req_handler.HandleRequest(
+				connInstance,
+				&buf,
+				read,
+				service.RequestHandlerOptions{
+					IsMaster:    config.IsMaster,
+					ShouldClose: shouldClose,
+				},
+			)
+		}
 	} // end of else
 
-	<-sigChan
 }

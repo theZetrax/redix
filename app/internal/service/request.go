@@ -91,17 +91,24 @@ READLOOP:
 			}
 		}
 
-		// handle the request
 		if handler == nil {
 			return
 		}
 
-		if IsDelegateReq(req.CMD) {
-			for _, conn := range h.ConnPool {
-				conn.Write(*buf)
+		// delegate the request to all connected replicas
+		if IsDelegateReq(req.CMD) && len(h.ConnPool) > 0 {
+			for cid, conn := range h.ConnPool {
+				_, err := conn.Write(*buf)
+				if err != nil {
+					conn.Close()
+					delete(h.ConnPool, cid)
+				}
 			}
+
+			log.Printf("delegated to active nodes[ACTIVE: %v]: %v %v", len(h.ConnPool), req.CMD.CMD, req.CMD.Args)
 		}
 
+		// handle the request
 		handler(
 			conn,
 			req,
