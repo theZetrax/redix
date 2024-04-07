@@ -2,7 +2,6 @@ package internal
 
 import (
 	"log"
-	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 )
@@ -25,7 +24,6 @@ type Request struct {
 // Parses the incoming buffer and returns a Request object
 func ParseRequest(buffer []byte) (Request, error) {
 	raw := string(buffer)
-	log.Println("[RAW REQUEST]: ", strings.ReplaceAll(raw, "\r\n", "\\r\\n"))
 
 	// remove the prefix and suffix from the raw request
 	// the prefix and suffix are defined by the protocol

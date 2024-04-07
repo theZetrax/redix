@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (h *ReqHandler) handleReplConf(conn net.Conn, _ internal.Request, _ RequestHandlerOptions) {
+func (h *MainNode) handleReplConf(conn net.Conn, _ internal.Request, _ MainNodeOptions) {
 	_, err := conn.Write([]byte(encoder.NewSimpleString("OK")))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
@@ -20,7 +20,7 @@ func (h *ReqHandler) handleReplConf(conn net.Conn, _ internal.Request, _ Request
 	}
 }
 
-func (h *ReqHandler) handlePsync(conn net.Conn, _ internal.Request, handlerOpts RequestHandlerOptions) {
+func (h *MainNode) handlePsync(conn net.Conn, _ internal.Request, handlerOpts MainNodeOptions) {
 	// generate a unique conn_id for the connection
 	conn_id := encoder.Sha1Hash(uuid.New().String())
 

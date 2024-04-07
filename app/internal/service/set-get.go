@@ -11,7 +11,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
 )
 
-func (h *ReqHandler) handleSet(conn net.Conn, req internal.Request, _ RequestHandlerOptions) {
+func (h *MainNode) handleSet(conn net.Conn, req internal.Request, _ MainNodeOptions) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 
@@ -32,7 +32,7 @@ func (h *ReqHandler) handleSet(conn net.Conn, req internal.Request, _ RequestHan
 	}
 }
 
-func (h *ReqHandler) handleGet(conn net.Conn, req internal.Request, _ RequestHandlerOptions) {
+func (h *MainNode) handleGet(conn net.Conn, req internal.Request, _ MainNodeOptions) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 

@@ -32,7 +32,7 @@ func main() {
 			log.Printf("Error connecting to master[%s]: %s\n", config.ReplicaOf.Raw, err.Error())
 			os.Exit(1)
 		}
-		resp_handler := &service.ResponseHandler{
+		resp_handler := &service.ReplicaNode{
 			StorageEngine: storageEngine,
 		}
 
@@ -53,12 +53,12 @@ func main() {
 					os.Exit(1)
 				}
 
-				resp_handler.HandleResponse(buf[:read])
+				resp_handler.Handle(buf[:read])
 			}
 		}()
 	}
 
-	req_handler := &service.ReqHandler{
+	req_handler := &service.MainNode{
 		StorageEngine: storageEngine,
 		Config:        config,
 		ConnPool:      make(map[string]net.Conn),
@@ -97,11 +97,11 @@ func main() {
 
 			shouldClose := service.IsLongLived(buf, read)
 
-			go req_handler.HandleRequest(
+			go req_handler.Handle(
 				connInstance,
 				&buf,
 				read,
-				service.RequestHandlerOptions{
+				service.MainNodeOptions{
 					IsMaster:    config.IsMaster,
 					ShouldClose: shouldClose,
 				},

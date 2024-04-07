@@ -9,12 +9,12 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
-// ResponseHandler handles the response from the master node
-type ResponseHandler struct {
+// ReplicaNode handles the response from the master node
+type ReplicaNode struct {
 	StorageEngine *repository.StorageEngine
 }
 
-func (h *ResponseHandler) HandleResponse(buf []byte) {
+func (h *ReplicaNode) Handle(buf []byte) {
 	req, err := internal.ParseRequest(buf)
 	if err != nil {
 		log.Println("Error parsing request: ", err.Error())
@@ -31,7 +31,7 @@ func (h *ResponseHandler) HandleResponse(buf []byte) {
 	}
 }
 
-func (h *ResponseHandler) handleSet(req internal.Request) {
+func (h *ReplicaNode) handleSet(req internal.Request) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 

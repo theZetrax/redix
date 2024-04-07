@@ -14,25 +14,25 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
-type RequestHandlerOptions struct {
+type MainNodeOptions struct {
 	IsMaster    bool
 	ShouldClose bool
 }
-type ReqHandlerFunc func(conn net.Conn, req internal.Request, opts RequestHandlerOptions)
+type MainNodeHandlerFn func(conn net.Conn, req internal.Request, opts MainNodeOptions)
 
-// ReqHandler handles incoming requests
+// MainNode handles incoming requests
 // and delegates them to the appropriate handler
-type ReqHandler struct {
+type MainNode struct {
 	StorageEngine *repository.StorageEngine
 	Config        *internal.Config
 	ConnPool      map[string]net.Conn // active connection pool
 }
 
-func (h *ReqHandler) HandleRequest(
+func (h *MainNode) Handle(
 	conn net.Conn,
 	buf *[]byte, // buffer
 	read int, // read bytes length
-	opts RequestHandlerOptions, // handler options
+	opts MainNodeOptions, // handler options
 ) {
 	// by default should close the connection
 	if opts.ShouldClose {
@@ -65,7 +65,7 @@ READLOOP:
 		log.Println(req.CMD.CMD, req.CMD.Args)
 
 		// find the handler for the request
-		var handler ReqHandlerFunc = nil
+		var handler MainNodeHandlerFn = nil
 		switch cmd := req.CMD.CMD; cmd {
 		case decoder.CMD_PING:
 			handler = h.handlePing
@@ -123,19 +123,19 @@ READLOOP:
 
 // Close closes all active connections to the server
 // and cleans up resources
-func (h *ReqHandler) Close() {
+func (h *MainNode) Close() {
 	for _, conn := range h.ConnPool {
 		conn.Close()
 	}
 }
 
 // AddToConnPool adds a connection to the active connection pool
-func (h *ReqHandler) AddToConnPool(conn net.Conn, uuid string) {
+func (h *MainNode) AddToConnPool(conn net.Conn, uuid string) {
 	h.ConnPool[uuid] = conn
 }
 
-func (h *ReqHandler) handleEcho(
-	conn net.Conn, req internal.Request, _ RequestHandlerOptions,
+func (h *MainNode) handleEcho(
+	conn net.Conn, req internal.Request, _ MainNodeOptions,
 ) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
@@ -148,8 +148,8 @@ func (h *ReqHandler) handleEcho(
 	}
 }
 
-func (h *ReqHandler) handlePing(
-	conn net.Conn, req internal.Request, _ RequestHandlerOptions,
+func (h *MainNode) handlePing(
+	conn net.Conn, req internal.Request, _ MainNodeOptions,
 ) {
 	_, err := conn.Write([]byte("+PONG\r\n"))
 	if err != nil {
