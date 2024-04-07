@@ -53,11 +53,15 @@ READLOOP:
 		}
 		if readErr != nil {
 			log.Println("Error reading from connection: ", readErr.Error())
-			return
+			continue READLOOP
 		}
 
 		// parse the request
-		req := internal.ParseRequest((*buf)[:read])
+		req, err := internal.ParseRequest((*buf)[:read])
+		if err != nil {
+			log.Println("Error parsing request: ", err.Error())
+			return
+		}
 		log.Println(req.CMD.CMD, req.CMD.Args)
 
 		// find the handler for the request
@@ -96,7 +100,7 @@ READLOOP:
 		}
 
 		// delegate the request to all connected replicas
-		if IsDelegateReq(req.CMD) && len(h.ConnPool) > 0 {
+		if opts.IsMaster && IsDelegateReq(req.CMD) && len(h.ConnPool) > 0 {
 			for cid, conn := range h.ConnPool {
 				_, err := conn.Write(*buf)
 				if err != nil {

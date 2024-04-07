@@ -15,7 +15,11 @@ type ResponseHandler struct {
 }
 
 func (h *ResponseHandler) HandleResponse(buf []byte) {
-	req := internal.ParseRequest(buf)
+	req, err := internal.ParseRequest(buf)
+	if err != nil {
+		log.Println("Error parsing request: ", err.Error())
+		return
+	}
 
 	log.Println("[FROM MASTER]", req.CMD.CMD, req.CMD.Args)
 
@@ -31,6 +35,7 @@ func (h *ResponseHandler) handleSet(req internal.Request) {
 	args_raw := req.CMD.Args
 	args := encoder.ConvertSliceToStringArray(args_raw)
 
+	log.Println("Handling set command: ", args)
 	key, values, opts, err := decoder.ParseSetCommand(args)
 	if err != nil {
 		log.Println("Error parsing set command: ", err.Error())

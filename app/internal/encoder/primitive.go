@@ -4,6 +4,7 @@
 package encoder
 
 import (
+	"crypto/sha1"
 	"fmt"
 )
 
@@ -14,4 +15,12 @@ func ConvertSliceToStringArray(slice []interface{}) []string {
 		strSlice[i] = fmt.Sprintf("%v", v)
 	}
 	return strSlice
+}
+
+func Sha1Hash(input string) string {
+	h := sha1.New()
+	h.Write([]byte(input))
+	hashed := h.Sum(nil)
+
+	return fmt.Sprintf("%x", hashed)
 }

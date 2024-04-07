@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/service"
@@ -19,11 +21,13 @@ func main() {
 	storageEngine := repository.NewStorageEngine()
 
 	// connection instance
-	var connInstance net.Conn
 	var err error
 
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	if !config.IsMaster {
-		connInstance, err = service.Handshake(config.ReplicaOf.Raw, config.Port)
+		replicaConn, err := service.Handshake(config.ReplicaOf.Raw, config.Port)
 		if err != nil {
 			log.Printf("Error connecting to master[%s]: %s\n", config.ReplicaOf.Raw, err.Error())
 			os.Exit(1)
@@ -32,48 +36,51 @@ func main() {
 			StorageEngine: storageEngine,
 		}
 
-		defer connInstance.Close()
+		defer replicaConn.Close()
 
 		// handle incoming responses from master
 		// and update the storage engine
-		for {
-			var read int
-			buf := make([]byte, 1024)
-			read, err = connInstance.Read(buf)
-			if err != nil {
-				if err == io.EOF {
-					break
+		go func() {
+			for {
+				var read int
+				buf := make([]byte, 1024)
+				read, err = replicaConn.Read(buf)
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					log.Println("Error reading from connection: ", err.Error())
+					os.Exit(1)
 				}
-				log.Println("Error reading from connection: ", err.Error())
-				os.Exit(1)
+
+				resp_handler.HandleResponse(buf[:read])
 			}
+		}()
+	}
 
-			resp_handler.HandleResponse(buf[:read])
-		}
+	req_handler := &service.ReqHandler{
+		StorageEngine: storageEngine,
+		Config:        config,
+		ConnPool:      make(map[string]net.Conn),
+	}
 
-	} else {
-		req_handler := &service.ReqHandler{
-			StorageEngine: storageEngine,
-			Config:        config,
-			ConnPool:      make(map[string]net.Conn),
-		}
+	l, err := net.Listen("tcp", "0.0.0.0:"+config.Port)
+	if err != nil {
+		fmt.Println("Failed to bind to port:", config.Port)
+		os.Exit(1)
+	}
 
-		l, err := net.Listen("tcp", "0.0.0.0:"+config.Port)
-		if err != nil {
-			fmt.Println("Failed to bind to port:", config.Port)
-			os.Exit(1)
-		}
+	fmt.Printf("Redis-server listening on: %s\n", config.Port)
 
-		fmt.Printf("Redis-server listening on: %s\n", config.Port)
+	defer l.Close()
+	defer req_handler.Close()
 
-		defer l.Close()
-		defer req_handler.Close()
-
+	go func() {
 		// handle incoming connections
 		for {
 			// accept connection if master node
 			// else use the replication connection
-			connInstance, err = l.Accept()
+			connInstance, err := l.Accept()
 			if err != nil {
 				fmt.Println("Error accepting connection: ", err.Error())
 				os.Exit(1)
@@ -100,6 +107,7 @@ func main() {
 				},
 			)
 		}
-	} // end of else
+	}()
 
+	<-sigChan
 }

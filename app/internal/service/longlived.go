@@ -8,7 +8,14 @@ import (
 // IsLongLived checks if the connection is long-lived.
 // A long-lived connection is a connection used for replication.
 func IsLongLived(buf []byte, read int) bool {
-	req := internal.ParseRequest(buf[:read])
+	req, err := internal.ParseRequest(buf[:read])
+	if err != nil {
+		// not a valid request
+		// will terminate the connection
+		// if it's not a valid request
+		// in the next iteration
+		return false
+	}
 
 	switch req.CMD.CMD {
 	case decoder.CMD_PSYNC:

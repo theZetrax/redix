@@ -2,6 +2,7 @@ package internal
 
 import (
 	"log"
+	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 )
@@ -22,22 +23,26 @@ type Request struct {
 }
 
 // Parses the incoming buffer and returns a Request object
-func ParseRequest(buffer []byte) Request {
+func ParseRequest(buffer []byte) (Request, error) {
 	raw := string(buffer)
+	log.Println("[RAW REQUEST]: ", strings.ReplaceAll(raw, "\r\n", "\\r\\n"))
+
 	// remove the prefix and suffix from the raw request
 	// the prefix and suffix are defined by the protocol
 	// and are not part of the actual command
 	var cmd decoder.CMD
 	if parsed, err := decoder.ParseArray(raw); err != nil {
-		log.Panicln("Error parsing request: ", err)
+		log.Println("Error parsing request: ", err)
+		return Request{}, err
 	} else {
 		cmd, err = decoder.NewCMD(parsed)
 		if err != nil {
-			log.Panicln("Error parsing request: ", err)
+			log.Println("Error parsing request: ", err)
+			return Request{}, err
 		}
 	}
 
 	return Request{
 		CMD: cmd,
-	}
+	}, nil
 }

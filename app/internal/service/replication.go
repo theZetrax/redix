@@ -22,7 +22,7 @@ func (h *ReqHandler) handleReplConf(conn net.Conn, _ internal.Request, _ Request
 
 func (h *ReqHandler) handlePsync(conn net.Conn, _ internal.Request, handlerOpts RequestHandlerOptions) {
 	// generate a unique conn_id for the connection
-	conn_id := uuid.New().String()
+	conn_id := encoder.Sha1Hash(uuid.New().String())
 
 	full_resync_resp := encoder.NewSimpleString(
 		fmt.Sprintf("FULLRESYNC %v 0", conn_id),
