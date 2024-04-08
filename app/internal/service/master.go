@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -11,6 +12,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/encoder"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/logger"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 )
 
@@ -62,7 +64,9 @@ READLOOP:
 			log.Println("Error parsing request: ", err.Error())
 			return
 		}
-		log.Println(req.CMD.CMD, req.CMD.Args)
+		fmt.Println(req.CMD.CMD, req.CMD.Args)
+		// print to file
+		logger.Log(logger.LOG_REQRES, fmt.Sprintf("[MASTER] %s %v", req.CMD.CMD, req.CMD.Args))
 
 		// find the handler for the request
 		var handler MainNodeHandlerFn = nil

@@ -8,3 +8,8 @@ run:
 replica:
 	go run app/server.go --port 6381 --replicaof localhost 6379
 
+build:
+	go build -o ${BIN_PATH} app/server.go
+
+clean:
+	rm -rf ${BIN_DIR}
