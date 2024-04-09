@@ -31,7 +31,7 @@ func (h *MainNode) handlePsync(conn net.Conn, _ internal.Request, handlerOpts Ma
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
 
-		conn.Close()
+		// conn.Close()
 		os.Exit(1)
 	}
 
@@ -40,17 +40,14 @@ func (h *MainNode) handlePsync(conn net.Conn, _ internal.Request, handlerOpts Ma
 	if err != nil {
 		log.Println("Error decoding hex to binary: ", err.Error())
 
-		conn.Close()
-		os.Exit(1)
+		return
 	}
 
 	// Send RDB file to replica
 	_, err = conn.Write([]byte(encoder.NewBinaryString(rdb_bin)))
 	if err != nil {
 		log.Println("Error writing to connection: ", err.Error())
-
-		conn.Close()
-		os.Exit(1)
+		return
 	}
 
 	// if connection is not closed, append to connection pool

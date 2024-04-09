@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/decoder"
@@ -23,12 +22,6 @@ func (h *ReplicaNode) Handle(buf []byte) {
 		log.Println("Error parsing request: ", err.Error())
 		return
 	}
-	f, err := os.Create("./replica.log")
-	if err != nil {
-		log.Println("Error creating replica log file: ", err.Error())
-		return
-	}
-	defer f.Close()
 
 	fmt.Println("[REPLICA]", req.CMD.CMD, req.CMD.Args)
 	logger.Log(logger.LOG_REQRES, fmt.Sprintf("[REPLICA] %s %v", req.CMD.CMD, req.CMD.Args))
@@ -37,7 +30,6 @@ func (h *ReplicaNode) Handle(buf []byte) {
 	case decoder.CMD_SET:
 		// handle set command
 		h.handleSet(req)
-		break
 	}
 }
 

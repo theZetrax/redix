@@ -19,20 +19,16 @@ type HOST struct {
 }
 
 func InitFlags() (cli_args CLIArgs) {
-	//#region define the flags
-	// port flag
 	flag.StringVar(&cli_args.port, "port", "6379", "Port to listen on, default: 6379")
 	flag.StringVar(&cli_args.replica_of, "p", "6379", "Port to listen on, default: 6379")
-
-	// replicaof
 	flag.StringVar(&cli_args.replica_of, "replicaof", "", "Replicate another Redis instance")
-	//#endregion
 
-	flag.Parse() // parse the flags
+	flag.Parse()
 
 	// check for replicaof flag
 	args_raw := os.Args[1:]
 	for i, arg := range args_raw {
+	MATCH_ARG:
 		switch arg {
 		case "--replicaof":
 			idx_host := i + 1
@@ -48,8 +44,7 @@ func InitFlags() (cli_args CLIArgs) {
 			replica_of_val := args_raw[idx_host] + ":" + args_raw[idx_port]
 			// set the replicaof flag
 			flag.Set("replicaof", replica_of_val)
-
-			break
+			break MATCH_ARG
 		}
 	}
 
@@ -60,6 +55,8 @@ func (ca *CLIArgs) GetPort() string {
 	return ca.port
 }
 
+// GetReplicaOf returns the host and port of the replica
+// if the replica_of flag is not set, it returns an is_master false
 func (ca *CLIArgs) GetReplicaOf() (_ HOST, is_master bool) {
 	if ca.replica_of == "" {
 		return HOST{}, true

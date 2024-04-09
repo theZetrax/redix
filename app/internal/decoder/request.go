@@ -42,7 +42,7 @@ func checkDataType(raw string) (byte, bool, error) {
 	case T_INTEGER:
 		return T_INTEGER, false, nil
 	default:
-		return T_ERROR, false, errors.New("Invalid raw string")
+		return T_ERROR, false, errors.New("Invalid raw data")
 	}
 }
 
@@ -59,7 +59,9 @@ func ParseRaw(raw string) (any, error) {
 	case T_INTEGER:
 		return parseInt(raw)
 	default:
-		return T_ERROR, errors.New("Invalid raw string")
+		// fallback to string
+		return fallbackParseString(raw)
+		// return T_ERROR, errors.New("Invalid raw string")
 	}
 }
 
@@ -80,7 +82,14 @@ func ParseArray(raw string) ([]any, error) {
 	// split the array into individual elements
 	for i := 0; i < size; i++ {
 		if dataType, hasMeta, err := checkDataType(data); err != nil {
-			return nil, err // exit `parseArray` on error
+			// INFO: This is a fallback to parse the array
+			// return nil, err // exit `parseArray` on error
+
+			parsed_entry, err := fallbackParseString(strings.Trim(data, CRLF))
+			if err != nil {
+				return nil, err
+			}
+			entries = append(entries, parsed_entry)
 		} else {
 			if hasMeta {
 				entry := []any{}
@@ -167,6 +176,11 @@ func parseInt(raw string) (int, error) {
 		data = strings.TrimSuffix(raw[1:], CRLF)
 	}
 	return strconv.Atoi(data)
+}
+
+func fallbackParseString(raw string) (string, error) {
+	size := len(raw)
+	return strings.TrimSpace(raw[:size]), nil
 }
 
 // Parse an bulk string data struct

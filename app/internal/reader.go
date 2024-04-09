@@ -35,7 +35,7 @@ func ParseRequest(buffer []byte) (Request, error) {
 	} else {
 		cmd, err = decoder.NewCMD(parsed)
 		if err != nil {
-			log.Println("Error parsing request: ", err)
+			log.Println("Error reading command: ", err)
 			return Request{}, err
 		}
 	}

@@ -4,6 +4,7 @@
 package service
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -16,6 +17,7 @@ import (
 
 // handshake with master node.
 func Handshake(master_host string, port string) (conn net.Conn, err error) {
+	fmt.Println("Connecting to master: ", master_host)
 	conn, err = net.Dial("tcp", master_host)
 	if err != nil {
 		return nil, err

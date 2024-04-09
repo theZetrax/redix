@@ -104,6 +104,7 @@ func TestParseArray(t *testing.T) {
 		"*1\r\n*2\r\n:1\r\n:2\r\n\r\n":              {[]any{1, 2}},
 		"*1\r\n*2\r\n+NO\r\n+YES\r\n\r\n":           {[]any{"NO", "YES"}},
 		"*1\r\n*2\r\n$2\r\nNO\r\n$3\r\nYES\r\n\r\n": {[]any{"NO", "YES"}},
+		"*1\r\n$4\r\nPING\r\n":                      {"PING"},
 	}
 
 	for input, expected := range input_expected_map {
