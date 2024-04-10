@@ -1,22 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"net"
-	"os"
+	"github.com/codecrafters-io/redis-starter-go/app/manager"
 )
 
 func main() {
-	fmt.Println("Logs from your program will appear here!")
+	port := "6379"
 
-	l, err := net.Listen("tcp", "0.0.0.0:6379")
-	if err != nil {
-		fmt.Println("Failed to bind to port 6379")
-		os.Exit(1)
+	cm := manager.NewClientManager()
+	server := &manager.ConnManager{
+		ClientManager: cm,
 	}
-	_, err = l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
+
+	server.Serve(port)
+	server.Start()
 }
