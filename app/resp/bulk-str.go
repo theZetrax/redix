@@ -30,7 +30,8 @@ func NewBulkString(data []byte) *BulkString {
 }
 
 func GetBulkStringSize(data []byte) int {
-	size, err := strconv.Atoi(string(data[1:2]))
+	data_str, _, _ := strings.Cut(string(data), CRLF)
+	size, err := strconv.Atoi(data_str[1:])
 	if err != nil {
 		log.Panicln("Failed to parse bulk string, invalid size: ", err)
 	}

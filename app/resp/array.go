@@ -16,6 +16,15 @@ type Array struct {
 	Parsed  []any
 }
 
+func GetArraySize(data []byte) int {
+	data_str, _, _ := strings.Cut(string(data), CRLF)
+	size, err := strconv.Atoi(data_str[1:])
+	if err != nil {
+		log.Panicln("Failed to parse array, invalid size: ", err)
+	}
+	return size
+}
+
 func EncodeArray(data ...[]byte) []byte {
 	size := fmt.Sprintf("%d", len(data))
 	encoded_array := []byte("*" + size + CRLF)
@@ -38,14 +47,6 @@ func NewArray(data []byte) *Array {
 	arr.decode()
 
 	return arr
-}
-
-func GetArraySize(data []byte) int {
-	size, err := strconv.Atoi(string(data[1:2]))
-	if err != nil {
-		log.Panicln("Failed to parse array, invalid size: ", err)
-	}
-	return size
 }
 
 func (a *Array) decode() (data []byte, size int) {
