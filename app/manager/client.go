@@ -1,11 +1,12 @@
 package manager
 
 import (
-	"fmt"
 	"io"
 	"net"
-	"strings"
 
+	"github.com/codecrafters-io/redis-starter-go/app/cmd"
+	"github.com/codecrafters-io/redis-starter-go/app/logger"
+	"github.com/codecrafters-io/redis-starter-go/app/repository"
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
 
@@ -14,6 +15,7 @@ type ClientManager struct {
 	broadcast  chan []byte // broadcast message to all clients
 	register   chan *Client
 	unregister chan *Client
+	store      *repository.Store
 }
 
 type Client struct {
@@ -23,12 +25,13 @@ type Client struct {
 	send    chan []byte // Outgoing responses to the clients.
 }
 
-func NewClientManager() *ClientManager {
+func NewClientManager(store *repository.Store) *ClientManager {
 	cm := &ClientManager{
 		clients:    make(map[*Client]bool),
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
+		store:      store,
 	}
 
 	return cm
@@ -72,8 +75,21 @@ func (c *Client) Setup() {
 				continue
 			}
 
-			fmt.Println("Received message: ", strings.ReplaceAll(string(message), resp.CRLF, "\\r\\n"))
-			response := resp.HandleResp(message).Process()
+			logger.LogResp("Received: ", message)
+			handler, _ := resp.HandleResp(message)
+			var response []byte
+
+			switch handler.(type) {
+			case *resp.Array:
+				arr := handler.(*resp.Array)
+				cmd := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
+					Store: c.manager.store,
+				})
+				response = cmd.Process()
+			default:
+				response = handler.Process()
+			}
+
 			c.conn.Write(response)
 		}
 	}

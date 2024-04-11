@@ -1,17 +1,17 @@
 package resp
 
 import (
-	"fmt"
 	"strings"
 )
 
 type SimpleString struct {
-	resp       Resp
-	ParsedData string
+	resp    Resp
+	Parsed  string // Data parsed to simple string
+	Decoded []byte // Decoded data
 }
 
 func EncodeSimpleString(str string) []byte {
-	return []byte(fmt.Sprintf("+%s"+CRLF, str))
+	return []byte("+" + str + CRLF)
 }
 
 func NewSimpleString(data []byte) *SimpleString {
@@ -28,14 +28,21 @@ func NewSimpleString(data []byte) *SimpleString {
 func (s *SimpleString) decode() string {
 	data := s.resp.Data
 	data = data[1:]
-	return strings.TrimRight(string(data), CRLF)
+	s.Parsed = strings.TrimRight(string(data), CRLF)
+	s.Decoded = EncodeSimpleString(s.Parsed)
+
+	return s.Parsed
 }
 func (s *SimpleString) Process() []byte {
-	fmt.Println("Data: ", s.decode())
-	switch s.ParsedData = strings.ToUpper(s.decode()); s.ParsedData {
+	switch str := s.String(); str {
 	case "PING":
 		return EncodeSimpleString("PONG")
 	default:
-		return EncodeSimpleString(s.ParsedData)
+		return EncodeSimpleString(s.Parsed)
 	}
+}
+
+func (s *SimpleString) String() string {
+	s.Parsed = strings.ToUpper(s.decode())
+	return s.Parsed
 }
