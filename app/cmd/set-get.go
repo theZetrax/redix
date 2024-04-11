@@ -10,6 +10,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
+	"github.com/codecrafters-io/redis-starter-go/app/utl"
 )
 
 const (
@@ -21,7 +22,7 @@ var SUB_COMMANDS = map[CMD_TYPE][]string{
 }
 
 func handleSet(o CMD_OPTS, _args []any) []byte {
-	args := reflect.ValueOf(_args).Interface().([]string)
+	args := utl.ToStringSlice(_args)
 	key, value, opts, err := parseSetCmd(args)
 
 	if err != nil {
@@ -83,6 +84,12 @@ func parseSetCmd(args []string) (string, string, repository.SetOptions, error) {
 
 func handleGet(o CMD_OPTS, args []any) []byte {
 	key := args[0].(string)
+
+	// check if expired
+	if o.Store.ExpiredTimeout(key) {
+		return resp.EncodeNil()
+	}
+
 	value, error := o.Store.Get(key)
 
 	if error != nil {
