@@ -5,48 +5,61 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
+	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
 
 type CMD_TYPE string
 type CMD_OPTS struct {
-	Store *repository.Store
+	Store       *repository.Store
+	ReplicaInfo *resp.NodeInfo
 }
 type CMD_HANDLER func(opts CMD_OPTS, args []any) []byte
 type CMD struct {
-	Name    CMD_TYPE
-	Args    []any
-	handler CMD_HANDLER
-	Store   *repository.Store
+	Name        CMD_TYPE
+	Args        []any
+	handler     CMD_HANDLER
+	Store       *repository.Store
+	ReplicaInfo *resp.NodeInfo
 }
 
 const (
-	CMD_PING    CMD_TYPE = "PING"
-	CMD_SET     CMD_TYPE = "SET"
-	CMD_ECHO    CMD_TYPE = "ECHO"
-	CMD_INVALID CMD_TYPE = "INVALID"
-	CMD_GET     CMD_TYPE = "GET"
+	CMD_PING     CMD_TYPE = "PING"
+	CMD_SET      CMD_TYPE = "SET"
+	CMD_ECHO     CMD_TYPE = "ECHO"
+	CMD_INVALID  CMD_TYPE = "INVALID"
+	CMD_GET      CMD_TYPE = "GET"
+	CMD_REPLCONF CMD_TYPE = "REPLCONF"
+	CMD_PSYNC    CMD_TYPE = "PSYNC"
+	CMD_INFO     CMD_TYPE = "INFO"
 )
 
 func NewCMD(raw []any, opts CMD_OPTS) *CMD {
 	cmd := &CMD{
-		Name:  CMD_INVALID,
-		Args:  raw[1:],
-		Store: opts.Store,
+		Name:        CMD_INVALID,
+		Args:        raw[1:],
+		Store:       opts.Store,
+		ReplicaInfo: opts.ReplicaInfo,
 	}
 
 	switch strings.ToUpper(raw[0].(string)) {
-	case "PING":
+	case string(CMD_PING):
 		cmd.Name = CMD_PING
 		cmd.handler = handlePing
-	case "SET":
+	case string(CMD_SET):
 		cmd.Name = CMD_SET
 		cmd.handler = handleSet
-	case "ECHO":
+	case string(CMD_ECHO):
 		cmd.Name = CMD_ECHO
 		cmd.handler = handleEcho
-	case "GET":
+	case string(CMD_GET):
 		cmd.Name = CMD_GET
 		cmd.handler = handleGet
+	case string(CMD_REPLCONF):
+		cmd.Name = CMD_REPLCONF
+		cmd.handler = handleReplConf
+	case string(CMD_INFO):
+		cmd.Name = CMD_INFO
+		cmd.handler = handleInfo
 	}
 
 	return cmd
@@ -54,5 +67,5 @@ func NewCMD(raw []any, opts CMD_OPTS) *CMD {
 
 func (c *CMD) Process() []byte {
 	log.Println("Executing Command: ", c.Name, c.Args)
-	return c.handler(CMD_OPTS{Store: c.Store}, c.Args)
+	return c.handler(CMD_OPTS{Store: c.Store, ReplicaInfo: c.ReplicaInfo}, c.Args)
 }

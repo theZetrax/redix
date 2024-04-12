@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"net"
 	"os"
+
+	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
 
 type ConnManager struct {
+	Role          resp.NodeRole
 	server        *net.Listener
 	ClientManager *ClientManager
+	ReplicaInfo   *resp.NodeInfo
 }
 
 func (n *ConnManager) Serve(port string) {
@@ -21,6 +25,15 @@ func (n *ConnManager) Serve(port string) {
 	n.server = &l
 
 	fmt.Println("Server listening on localhost:" + port)
+}
+
+// ConnectToMaster connects the replica to the master node.
+func (n *ConnManager) ConnectToMaster(replicaInfo *resp.NodeInfo) {
+	if replicaInfo == nil {
+		return
+	}
+
+	Handshake(replicaInfo.Port)
 }
 
 func (n *ConnManager) Start() {
