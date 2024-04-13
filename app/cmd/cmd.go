@@ -74,7 +74,15 @@ func NewCMD(raw []any, opts CMD_OPTS) *CMD {
 	return cmd
 }
 
-func (c *CMD) Process(conn *net.Conn) {
+// Process the command, and write the response to the client
+// if successful, execute the post function
+//
+// 1. Execute the command handler
+// 2. if exists, Execute the handler function
+// 4. if exists, Execute the command handler for multiple responses
+// 3. execute the post function
+// 2. write the response to the client
+func (c *CMD) Process(conn *net.Conn, post func()) {
 	log.Println("Executing Command: ", c.Name, c.Args)
 	if c.handler != nil {
 		response := c.handler(CMD_OPTS{Store: c.Store, ReplicaInfo: c.ReplicaInfo}, c.Args)
@@ -98,5 +106,9 @@ func (c *CMD) Process(conn *net.Conn) {
 
 			time.Sleep(4 * time.Millisecond) // sleep for 4ms
 		}
+	}
+
+	if post != nil {
+		post()
 	}
 }

@@ -2,6 +2,7 @@ package manager
 
 import (
 	"io"
+	"log"
 	"net"
 
 	"github.com/codecrafters-io/redis-starter-go/app/cmd"
@@ -27,7 +28,7 @@ type Client struct {
 
 func NewClientManager(store *repository.Store, node_info *resp.NodeInfo) *ClientManager {
 	cm := &ClientManager{
-		clients:    make(map[*Client]bool),
+		clients:    make(map[*Client]bool, 0),
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
@@ -42,6 +43,7 @@ func (cm *ClientManager) setup() {
 	for {
 		select {
 		case client := <-cm.register:
+			log.Println("Replica registered to master")
 			cm.clients[client] = true
 		case client := <-cm.unregister:
 			if _, ok := cm.clients[client]; ok {
@@ -63,6 +65,7 @@ func NewClient(manager *ClientManager, conn net.Conn) *Client {
 		conn:    conn,
 		manager: manager,
 		message: make(chan []byte),
+		send:    make(chan []byte),
 	}
 
 	return c
@@ -86,11 +89,27 @@ func (c *Client) Setup() {
 					Store:       c.manager.store,
 					ReplicaInfo: c.manager.node_info,
 				})
-				cmd_handler.Process(&c.conn)
+
+				switch {
+				case cmd_handler.Name == cmd.CMD_PSYNC: // Register the replica to the master node.
+					cmd_handler.Process(&c.conn, func() {
+						c.manager.register <- c
+					})
+				case cmd_handler.Name == cmd.CMD_SET:
+					cmd_handler.Process(&c.conn, nil)
+					c.manager.broadcast <- message
+				default:
+					cmd_handler.Process(&c.conn, nil)
+				}
+
+				log.Println("Connections: ", c.manager.clients)
 			default:
 				response = handler.Process()
 				c.conn.Write(response)
 			}
+		case message := <-c.send:
+			log.Println("Sending message to client")
+			c.conn.Write(message)
 		}
 	}
 }

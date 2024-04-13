@@ -55,6 +55,7 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 
 func (n *ConnManager) Start() {
 	fmt.Println("Server started")
+
 	for {
 		conn, err := (*n.server).Accept()
 		if err != nil {
@@ -66,6 +67,7 @@ func (n *ConnManager) Start() {
 		fmt.Println("Accepted connection from: ", conn.RemoteAddr().String())
 
 		client := NewClient(n.ClientManager, conn)
+		go n.ClientManager.setup()
 		go client.Setup()
 		go client.Read()
 	}
