@@ -1,13 +1,11 @@
 package manager
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"net"
-	"os"
 	"strings"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
@@ -20,9 +18,9 @@ func NewReplica(host, port string) *resp.NodeInfo {
 }
 
 // handshake with master node.
-func Handshake(port string) (conn net.Conn, err error) {
-	fmt.Println("Connecting to master: ", "localhost:"+port)
-	conn, err = net.Dial("tcp", "localhost:"+port)
+func Handshake(master_port string, node_port string) (conn net.Conn, err error) {
+	fmt.Println("Connecting to master: ", "localhost:"+master_port)
+	conn, err = net.Dial("tcp", "localhost:"+master_port)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +32,7 @@ func Handshake(port string) (conn net.Conn, err error) {
 		resp.EncodeArray(
 			resp.EncodeBulkString("REPLCONF"),
 			resp.EncodeBulkString("listening-port"),
-			resp.EncodeBulkString(port),
+			resp.EncodeBulkString(node_port),
 		),
 		// partial sync PSYNC
 		resp.EncodeArray(
@@ -50,29 +48,30 @@ func Handshake(port string) (conn net.Conn, err error) {
 	}
 
 	for _, message := range messages {
-		if _, err = io.Copy(conn, bytes.NewReader(message)); err != nil {
-			log.Printf(
-				"Error writing to master[%s]: %s\n",
-				"localhost:"+port,
-				err.Error(),
-			)
-			os.Exit(1)
+		// send ping to master
+		buf := make([]byte, 1024)
+		if _, err := conn.Write(message); err != nil {
+			log.Println("Failed to write to master: ", err)
+			return nil, err
 		}
 
-		buf := make([]byte, 1024)
-		read_bytes, err := conn.Read(buf) // read the response
+		// read response from master
+		read_bytes, err := conn.Read(buf)
 		if err != nil {
-			log.Panicln("Failed to read:", err)
+			log.Println("Failed to read from master: ", err)
+			return nil, err
 		}
 
 		raw := string(buf[:read_bytes])
 		log.Printf(
-			"Master[%s] raw response: %s\n",
-			"localhost:"+port,
+			"Recieved From Master[%s]: %s\n",
+			"localhost:"+master_port,
 			strings.ReplaceAll(raw, resp.CRLF, "\\r\\n"),
 		)
+
+		time.Sleep(4 * time.Millisecond) // wait for 10 milliseconds
 	}
 
-	log.Printf("Connected to master: %s\n", "localhost:"+port)
+	log.Printf("Connected to master: %s\n", "localhost:"+master_port)
 	return conn, nil
 }

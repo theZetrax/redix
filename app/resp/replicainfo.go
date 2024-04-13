@@ -3,6 +3,7 @@ package resp
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // NodeRole represents the role of the node in the Redis cluster.
@@ -10,7 +11,7 @@ type NodeRole string
 
 const (
 	RoleMaster  NodeRole = "master"
-	RoleReplica NodeRole = "replica"
+	RoleReplica NodeRole = "slave"
 )
 
 // It contains the host and port of the current node.
@@ -20,14 +21,38 @@ type NodeInfo struct {
 	MasterReplicaOffset string   `resp:"master_repl_offset"`
 	Host                string   `resp:"-"`
 	Port                string   `resp:"-"`
+	MasterPort          string   `resp:"-"`
+	MasterHost          string   `resp:"-"`
 }
 
-func EncodeNodeInfo(repl_info interface{}) []byte {
+func NewNodeInfo(host string, port string, replicaid string, replicaoffset string, master_addr string) *NodeInfo {
+	info := &NodeInfo{
+		Host:                host,
+		Port:                port,
+		Role:                RoleMaster,
+		MasterReplicaId:     replicaid,
+		MasterReplicaOffset: replicaoffset,
+	}
+
+	if master_addr != "" {
+		info.Role = RoleReplica
+		master_host, master_port, found := strings.Cut(master_addr, ":")
+		if !found {
+			panic("Invalid master node address: " + master_addr)
+		}
+		info.MasterHost = master_host
+		info.MasterPort = master_port
+	}
+
+	return info
+}
+
+func EncodeNodeInfo(node_info interface{}) []byte {
 	response := []byte("# Replication" + CRLF)
 	size := len(response)
 	lnCount := 1
 
-	entries := reflect.ValueOf(repl_info)
+	entries := reflect.ValueOf(node_info)
 	types := entries.Type()
 
 	for i := 0; i < entries.NumField(); i++ {

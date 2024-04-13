@@ -5,18 +5,17 @@ import (
 	"net"
 
 	"github.com/codecrafters-io/redis-starter-go/app/cmd"
-	"github.com/codecrafters-io/redis-starter-go/app/logger"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
 
 type ClientManager struct {
-	clients      map[*Client]bool
-	broadcast    chan []byte // broadcast message to all clients
-	register     chan *Client
-	unregister   chan *Client
-	store        *repository.Store
-	replica_info *resp.NodeInfo
+	clients    map[*Client]bool
+	broadcast  chan []byte // broadcast message to all clients
+	register   chan *Client
+	unregister chan *Client
+	store      *repository.Store
+	node_info  *resp.NodeInfo
 }
 
 type Client struct {
@@ -26,14 +25,14 @@ type Client struct {
 	send    chan []byte // Outgoing responses to the clients.
 }
 
-func NewClientManager(store *repository.Store, replica_info *resp.NodeInfo) *ClientManager {
+func NewClientManager(store *repository.Store, node_info *resp.NodeInfo) *ClientManager {
 	cm := &ClientManager{
-		clients:      make(map[*Client]bool),
-		broadcast:    make(chan []byte),
-		register:     make(chan *Client),
-		unregister:   make(chan *Client),
-		store:        store,
-		replica_info: replica_info,
+		clients:    make(map[*Client]bool),
+		broadcast:  make(chan []byte),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+		store:      store,
+		node_info:  node_info,
 	}
 
 	return cm
@@ -77,23 +76,21 @@ func (c *Client) Setup() {
 				continue
 			}
 
-			logger.LogResp("Received: ", message)
 			handler, _ := resp.HandleResp(message)
 			var response []byte
 
 			switch handler.(type) {
 			case *resp.Array:
 				arr := handler.(*resp.Array)
-				cmd := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
+				cmd_handler := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
 					Store:       c.manager.store,
-					ReplicaInfo: c.manager.replica_info,
+					ReplicaInfo: c.manager.node_info,
 				})
-				response = cmd.Process()
+				cmd_handler.Process(&c.conn)
 			default:
 				response = handler.Process()
+				c.conn.Write(response)
 			}
-
-			c.conn.Write(response)
 		}
 	}
 }

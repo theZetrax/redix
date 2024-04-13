@@ -44,30 +44,37 @@ func main() {
 	}
 
 	store := repository.NewStore()
-	var replica_info *resp.NodeInfo = &resp.NodeInfo{
-		Host:                "localhost",
-		Port:                port,
-		Role:                resp.RoleMaster,
-		MasterReplicaId:     "1",
-		MasterReplicaOffset: "0",
-	}
+
+	node_info := resp.NewNodeInfo(
+		"localhost",
+		port,
+		"1",
+		"0",
+		replica_of,
+	)
 
 	if replica_of != "" {
-		replica_host, replica_port, found := strings.Cut(replica_of, ":")
+		master_host, master_port, found := strings.Cut(replica_of, ":")
 		if !found {
 			log.Printf("Error: Invalid master node address: %v\n", replica_of)
 			os.Exit(1)
 		}
-		replica_info = manager.NewReplica(replica_host, replica_port)
+		node_info.MasterPort = master_port
+		node_info.MasterHost = master_host
+		node_info.Role = resp.RoleReplica
 	}
 
-	cm := manager.NewClientManager(store, replica_info)
+	cm := manager.NewClientManager(store, node_info)
 	server := &manager.ConnManager{
 		ClientManager: cm,
 		Role:          resp.RoleMaster,
-		ReplicaInfo:   replica_info,
+		ReplicaInfo:   node_info,
 	}
-	server.ConnectToMaster(replica_info)
+
+	// connect to master node if replica_of is set
+	if replica_of != "" {
+		server.ConnectToMaster(node_info)
+	}
 
 	server.Serve(port)
 	server.Start()
