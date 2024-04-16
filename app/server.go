@@ -44,7 +44,6 @@ func main() {
 	}
 
 	store := repository.NewStore()
-
 	node_info := resp.NewNodeInfo(
 		"localhost",
 		port,
@@ -67,15 +66,15 @@ func main() {
 	cm := manager.NewClientManager(store, node_info)
 	server := &manager.ConnManager{
 		ClientManager: cm,
+		NodeInfo:      node_info,
 		Role:          resp.RoleMaster,
-		ReplicaInfo:   node_info,
 	}
 
 	// connect to master node if replica_of is set
 	if replica_of != "" {
-		server.ConnectToMaster(node_info)
+		go server.ConnectToMaster(node_info)
 	}
 
-	server.Serve(port)
+	server.Serve(node_info.Port)
 	server.Start()
 }

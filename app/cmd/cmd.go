@@ -54,12 +54,12 @@ func NewCMD(raw []any, opts CMD_OPTS) *CMD {
 	case string(CMD_SET):
 		cmd.Name = CMD_SET
 		cmd.handler = handleSet
-	case string(CMD_ECHO):
-		cmd.Name = CMD_ECHO
-		cmd.handler = handleEcho
 	case string(CMD_GET):
 		cmd.Name = CMD_GET
 		cmd.handler = handleGet
+	case string(CMD_ECHO):
+		cmd.Name = CMD_ECHO
+		cmd.handler = handleEcho
 	case string(CMD_REPLCONF):
 		cmd.Name = CMD_REPLCONF
 		cmd.handler = handleReplConf

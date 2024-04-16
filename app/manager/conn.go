@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/codecrafters-io/redis-starter-go/app/cmd"
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
 
@@ -12,7 +13,7 @@ type ConnManager struct {
 	Role          resp.NodeRole
 	server        *net.Listener
 	ClientManager *ClientManager
-	ReplicaInfo   *resp.NodeInfo
+	NodeInfo      *resp.NodeInfo
 }
 
 func (n *ConnManager) Serve(port string) {
@@ -50,12 +51,36 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 		}
 
 		fmt.Println("Received from master: ", string(buf[:read_bytes]))
+
+		message := buf[:read_bytes]
+
+		if len(message) == 0 {
+			continue
+		}
+
+		handler, _ := resp.HandleResp(message)
+		switch handler.(type) {
+		case *resp.Array:
+			arr := handler.(*resp.Array)
+			cmd_handler := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
+				Store:       n.ClientManager.store,
+				ReplicaInfo: n.NodeInfo,
+			})
+
+			switch {
+			case cmd_handler.Name == cmd.CMD_SET:
+				cmd_handler.Process(&conn, nil)
+			default:
+				cmd_handler.Process(&conn, nil)
+			}
+		}
 	}
 }
 
 func (n *ConnManager) Start() {
 	fmt.Println("Server started")
 
+	go n.ClientManager.setup() // setup the clients
 	for {
 		conn, err := (*n.server).Accept()
 		if err != nil {
@@ -67,7 +92,6 @@ func (n *ConnManager) Start() {
 		fmt.Println("Accepted connection from: ", conn.RemoteAddr().String())
 
 		client := NewClient(n.ClientManager, conn)
-		go n.ClientManager.setup()
 		go client.Setup()
 		go client.Read()
 	}

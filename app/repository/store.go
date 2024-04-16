@@ -78,7 +78,7 @@ func (s *Store) Get(key string) (string, error) {
 
 	val, ok := s.store[key]
 	if !ok {
-		return "", errors.New("Key not found")
+		return "", errors.New("Key not found: " + key)
 	}
 	return val, nil
 }

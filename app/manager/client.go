@@ -10,6 +10,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
 
+// ClientManager manages the clients connected to the server.
 type ClientManager struct {
 	clients    map[*Client]bool
 	broadcast  chan []byte // broadcast message to all clients
@@ -108,7 +109,10 @@ func (c *Client) Setup() {
 				c.conn.Write(response)
 			}
 		case message := <-c.send:
-			log.Println("Sending message to client")
+			if len(message) == 0 {
+				continue
+			}
+
 			c.conn.Write(message)
 		}
 	}
