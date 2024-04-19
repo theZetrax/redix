@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"strings"
-	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
@@ -17,7 +16,7 @@ func NewReplica(host, port string) *resp.NodeInfo {
 	}
 }
 
-// handshake with master node.
+// Perform a handshake with master node.
 func Handshake(master_port string, node_port string) (conn net.Conn, err error) {
 	fmt.Println("Connecting to master: ", "localhost:"+master_port)
 	conn, err = net.Dial("tcp", "localhost:"+master_port)
@@ -68,8 +67,6 @@ func Handshake(master_port string, node_port string) (conn net.Conn, err error) 
 			"localhost:"+master_port,
 			strings.ReplaceAll(raw, resp.CRLF, "\\r\\n"),
 		)
-
-		time.Sleep(4 * time.Millisecond) // wait for 10 milliseconds
 	}
 
 	log.Printf("Connected to master: %s\n", "localhost:"+master_port)

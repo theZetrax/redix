@@ -74,7 +74,6 @@ func main() {
 	if replica_of != "" {
 		go server.ConnectToMaster(node_info)
 	}
-
 	server.Serve(node_info.Port)
 	server.Start()
 }

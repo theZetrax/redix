@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/codecrafters-io/redis-starter-go/app/cmd"
+	"github.com/codecrafters-io/redis-starter-go/app/logger"
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
 
@@ -50,8 +51,7 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 			}
 		}
 
-		fmt.Println("Received from master: ", string(buf[:read_bytes]))
-
+		logger.LogResp("From Master: %v\n", buf[:read_bytes])
 		message := buf[:read_bytes]
 
 		if len(message) == 0 {
@@ -62,16 +62,28 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 		switch handler.(type) {
 		case *resp.Array:
 			arr := handler.(*resp.Array)
-			cmd_handler := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
-				Store:       n.ClientManager.store,
-				ReplicaInfo: n.NodeInfo,
-			})
+			if resp.IsNestedArray(arr.Parsed) {
+				for _, nested_arr := range arr.Parsed {
+					cmd_handler := cmd.NewCMD(nested_arr.([]any), cmd.CMD_OPTS{
+						Store:       n.ClientManager.store,
+						ReplicaInfo: n.NodeInfo,
+					})
 
-			switch {
-			case cmd_handler.Name == cmd.CMD_SET:
-				cmd_handler.Process(&conn, nil)
-			default:
-				cmd_handler.Process(&conn, nil)
+					switch {
+					case cmd_handler.Name == cmd.CMD_SET:
+						cmd_handler.Process(&conn, nil)
+					}
+				}
+			} else {
+				cmd_handler := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
+					Store:       n.ClientManager.store,
+					ReplicaInfo: n.NodeInfo,
+				})
+
+				switch {
+				case cmd_handler.Name == cmd.CMD_SET:
+					cmd_handler.Process(&conn, nil)
+				}
 			}
 		}
 	}

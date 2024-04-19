@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -86,24 +87,44 @@ func (c *Client) Setup() {
 			switch handler.(type) {
 			case *resp.Array:
 				arr := handler.(*resp.Array)
-				cmd_handler := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
-					Store:       c.manager.store,
-					ReplicaInfo: c.manager.node_info,
-				})
+				fmt.Println("Received From Master: ", arr.Parsed)
+				if resp.IsNestedArray(arr.Parsed) {
+					for _, nested_arr := range arr.Parsed {
+						cmd_handler := cmd.NewCMD(nested_arr.([]any), cmd.CMD_OPTS{
+							Store:       c.manager.store,
+							ReplicaInfo: c.manager.node_info,
+						})
 
-				switch {
-				case cmd_handler.Name == cmd.CMD_PSYNC: // Register the replica to the master node.
-					cmd_handler.Process(&c.conn, func() {
-						c.manager.register <- c
+						switch {
+						case cmd_handler.Name == cmd.CMD_PSYNC: // Register the replica to the master node.
+							cmd_handler.Process(&c.conn, func() {
+								c.manager.register <- c
+							})
+						case cmd_handler.Name == cmd.CMD_SET:
+							cmd_handler.Process(&c.conn, nil)
+							c.manager.broadcast <- message
+						default:
+							cmd_handler.Process(&c.conn, nil)
+						}
+					}
+				} else {
+					cmd_handler := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
+						Store:       c.manager.store,
+						ReplicaInfo: c.manager.node_info,
 					})
-				case cmd_handler.Name == cmd.CMD_SET:
-					cmd_handler.Process(&c.conn, nil)
-					c.manager.broadcast <- message
-				default:
-					cmd_handler.Process(&c.conn, nil)
-				}
 
-				log.Println("Connections: ", c.manager.clients)
+					switch {
+					case cmd_handler.Name == cmd.CMD_PSYNC: // Register the replica to the master node.
+						cmd_handler.Process(&c.conn, func() {
+							c.manager.register <- c
+						})
+					case cmd_handler.Name == cmd.CMD_SET:
+						cmd_handler.Process(&c.conn, nil)
+						c.manager.broadcast <- message
+					default:
+						cmd_handler.Process(&c.conn, nil)
+					}
+				}
 			default:
 				response = handler.Process()
 				c.conn.Write(response)
