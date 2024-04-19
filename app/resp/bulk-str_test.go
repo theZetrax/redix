@@ -15,7 +15,7 @@ func TestBulkString(t *testing.T) {
 
 	for expected, input := range data {
 		b := NewBulkString([]byte(input))
-		parsed := b.decode()
+		parsed := b.Parsed
 
 		if parsed != expected {
 			t.Errorf("Failed to parse bulk string: %v", utl.Unquote(input))
@@ -37,7 +37,7 @@ func TestBulkString_UsingHandler(t *testing.T) {
 		expectedLen := expected[1].(int)
 
 		b, len := HandleResp(input)
-		parsed := b.String()
+		parsed := b.(*BulkString).Parsed
 
 		if len != expectedLen {
 			t.Errorf("Failed to parse bulk string, wrong length: %v, %v != %v", utl.Unquote(string(input)), len, expectedLen)

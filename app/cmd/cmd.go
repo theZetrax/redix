@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/logger"
 	"github.com/codecrafters-io/redis-starter-go/app/repository"
@@ -97,14 +96,14 @@ func (c *CMD) Process(conn *net.Conn, post func()) {
 	if c.handleMultiple != nil {
 		responses := c.handleMultiple(CMD_OPTS{Store: c.Store, ReplicaInfo: c.ReplicaInfo}, c.Args)
 
-		for _, response := range responses {
-			_, err := (*conn).Write(response)
-			if err != nil {
-				log.Println("Failed to write to master: ", err)
-				os.Exit(1)
+		if c.ReplicaInfo.Role == resp.RoleMaster {
+			for _, response := range responses {
+				_, err := (*conn).Write(response)
+				if err != nil {
+					log.Println("Failed to write to master: ", err)
+					os.Exit(1)
+				}
 			}
-
-			time.Sleep(4 * time.Millisecond) // sleep for 4ms
 		}
 	}
 
