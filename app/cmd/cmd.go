@@ -85,18 +85,21 @@ func (c *CMD) Process(conn *net.Conn, post func()) {
 	log.Println("Executing Command: ", c.Name, c.Args)
 	if c.handler != nil {
 		response := c.handler(CMD_OPTS{Store: c.Store, ReplicaInfo: c.ReplicaInfo}, c.Args)
-		logger.LogResp("Sending Response: ", response)
-		_, err := (*conn).Write(response)
-		if err != nil {
-			log.Println("Failed to write to master: ", err)
-			os.Exit(1)
+
+		if conn != nil {
+			logger.LogResp("Sending Response: ", response)
+			_, err := (*conn).Write(response)
+			if err != nil {
+				log.Println("Failed to write to master: ", err)
+				os.Exit(1)
+			}
 		}
 	}
 
 	if c.handleMultiple != nil {
 		responses := c.handleMultiple(CMD_OPTS{Store: c.Store, ReplicaInfo: c.ReplicaInfo}, c.Args)
 
-		if c.ReplicaInfo.Role == resp.RoleMaster {
+		if conn != nil {
 			for _, response := range responses {
 				_, err := (*conn).Write(response)
 				if err != nil {

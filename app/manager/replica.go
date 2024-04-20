@@ -63,7 +63,7 @@ func Handshake(master_port string, node_port string) (conn net.Conn, err error) 
 
 		raw := string(buf[:read_bytes])
 		log.Printf(
-			"Recieved From Master[%s]: %s\n",
+			"Recieved From Master[%s]: %q\n",
 			"localhost:"+master_port,
 			strings.ReplaceAll(raw, resp.CRLF, "\\r\\n"),
 		)

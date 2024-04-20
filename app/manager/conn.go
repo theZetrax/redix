@@ -51,7 +51,7 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 			}
 		}
 
-		logger.LogResp("From Master: %v\n", buf[:read_bytes])
+		logger.LogResp("From Master: ", buf[:read_bytes])
 		message := buf[:read_bytes]
 
 		if len(message) == 0 {
@@ -71,6 +71,8 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 
 					switch {
 					case cmd_handler.Name == cmd.CMD_SET:
+						cmd_handler.Process(nil, nil)
+					case cmd_handler.Name == cmd.CMD_REPLCONF:
 						cmd_handler.Process(&conn, nil)
 					}
 				}
@@ -82,6 +84,8 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 
 				switch {
 				case cmd_handler.Name == cmd.CMD_SET:
+					cmd_handler.Process(nil, nil)
+				case cmd_handler.Name == cmd.CMD_REPLCONF:
 					cmd_handler.Process(&conn, nil)
 				}
 			}
