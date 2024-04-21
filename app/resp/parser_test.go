@@ -19,7 +19,7 @@ func Test_Parser(t *testing.T) {
 	}
 
 	for k, v := range data {
-		result, _, _ := parse([]byte(k))
+		result, _, _, _ := Parse([]byte(k))
 		if result.(string) != v {
 			t.Errorf("Expected %v, got %v", v, result)
 		}
@@ -33,7 +33,7 @@ func Test_Large_String(t *testing.T) {
 	}
 
 	for input, expected := range data {
-		result, _, _ := parse([]byte(input))
+		result, _, _, _ := Parse([]byte(input))
 
 		if result.(string) != expected {
 			t.Errorf("Expected %v, got %v", expected, result)
@@ -54,7 +54,7 @@ func Test_Large_RDB(t *testing.T) {
 	}
 
 	for input, expected := range data {
-		result, rest, _ := parse([]byte(input))
+		result, _, rest, _ := Parse([]byte(input))
 
 		if result.(string) != expected.expected {
 			t.Errorf("Expected %v, got %v", expected.expected, result)
@@ -80,7 +80,7 @@ func Test_Array_Single(t *testing.T) {
 	}
 
 	for input, exp_results := range data {
-		result, left, _ := parse([]byte(input))
+		result, _, left, _ := Parse([]byte(input))
 		result_str := utl.ToStringSlice(result.([]interface{}))
 
 		for i, v := range result_str {
@@ -108,7 +108,7 @@ func Test_Array_Nested(t *testing.T) {
 	}
 
 	for input, exp_results := range data {
-		result, left, _ := parse([]byte(input))
+		result, _, left, _ := Parse([]byte(input))
 		result_str := utl.ToStringSlice(result.([]interface{})[0].([]interface{}))
 
 		for i, v := range result_str {
@@ -134,17 +134,17 @@ func Test_Array_RDB(t *testing.T) {
 	}
 	expected_arr := []string{"REPLCONF", "GETACK", "*"}
 
-	value1, rest1, _ := parse([]byte(input))
+	value1, _, rest1, _ := Parse([]byte(input))
 	if value1.(string) != expected[0] {
 		t.Errorf("Expected %q, got %q", expected[0], value1)
 	}
 
-	value2, rest2, _ := parse(rest1)
+	value2, _, rest2, _ := Parse(rest1)
 	if value2.(string) != expected[1] {
 		t.Errorf("Expected %v, got %v", expected[1], value2.(string))
 	}
 
-	value3, rest3, _ := parse(rest2)
+	value3, _, rest3, _ := Parse(rest2)
 	if reflect.DeepEqual(value3, expected_arr) {
 		t.Errorf("Expected %v, got %v", expected_arr, value3)
 	}
