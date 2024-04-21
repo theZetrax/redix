@@ -96,10 +96,7 @@ func (c *Client) Setup() {
 				})
 			}
 
-			log.Println("Recieved: ", req_data)
 			for _, d := range req_data {
-				log.Printf("Working on Request: %v (%v)\n", d.segment, string(d.segment_type))
-
 				switch d.segment_type {
 				case resp.TYPE_ARRAY:
 					arr := d.segment

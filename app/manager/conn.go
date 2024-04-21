@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
 
@@ -41,6 +42,18 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 		os.Exit(1)
 	}
 
+	psync_cmd := resp.EncodeArray(
+		resp.EncodeBulkString("PSYNC"),
+		resp.EncodeBulkString("?"),
+		resp.EncodeBulkString("-1"),
+	)
+
+	// send PSYNC command to master
+	if _, err := conn.Write(psync_cmd); err != nil {
+		log.Println("Failed to write to master: ", err)
+		os.Exit(1)
+	}
+
 	for {
 		buf := make([]byte, 1024)
 		read_bytes, err := conn.Read(buf)
@@ -58,28 +71,28 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 			continue
 		}
 
-		handler, _ := resp.HandleResp(message)
-		switch handler.(type) {
-		case *resp.Array:
-			arr := handler.(*resp.Array)
-			if resp.IsNestedArray(arr.Parsed) {
-				for _, nested_arr := range arr.Parsed {
-					cmd_handler := cmd.NewCMD(nested_arr.([]any), cmd.CMD_OPTS{
-						Store:       n.ClientManager.store,
-						ReplicaInfo: n.NodeInfo,
-					})
+		type requestData struct {
+			segment      any
+			segment_type resp.RESP_TYPE
+		}
+		req_data := make([]requestData, 0)
+		for segment, t, rest, err := resp.Parse(message); ; segment, t, rest, err = resp.Parse(rest) {
+			if err != nil {
+				break
+			}
+			req_data = append(req_data, requestData{
+				segment:      segment,
+				segment_type: t,
+			})
+		}
 
-					switch {
-					case cmd_handler.Name == cmd.CMD_SET:
-						cmd_handler.Process(nil, nil)
-					case cmd_handler.Name == cmd.CMD_REPLCONF:
-						cmd_handler.Process(&conn, nil)
-					}
-				}
-			} else {
-				cmd_handler := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
+		for _, d := range req_data {
+			switch d.segment_type {
+			case resp.TYPE_ARRAY:
+				arr := d.segment
+				cmd_handler := cmd.NewCMD(arr.([]any), cmd.CMD_OPTS{
 					Store:       n.ClientManager.store,
-					ReplicaInfo: n.NodeInfo,
+					ReplicaInfo: n.ClientManager.node_info,
 				})
 
 				switch {

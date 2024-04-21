@@ -15,8 +15,16 @@ func handleReplConf(opts CMD_OPTS, args []any) []byte {
 
 	sub_cmd := args[0].(string)
 	if sub_cmd == string(SUBCMD_GETACK) {
-		return resp.EncodeBulkString(
-			"REPLCONF ACK 0",
+		return resp.EncodeArray(
+			resp.EncodeBulkString(
+				"REPLCONF",
+			),
+			resp.EncodeBulkString(
+				"ACK",
+			),
+			resp.EncodeBulkString(
+				"0",
+			),
 		)
 	}
 	return resp.EncodeSimpleString("OK")

@@ -39,11 +39,6 @@ func Handshake(master_port string, node_port string) (conn net.Conn, err error) 
 			resp.EncodeBulkString("capa"),
 			resp.EncodeBulkString("psync2"),
 		),
-		resp.EncodeArray(
-			resp.EncodeBulkString("PSYNC"),
-			resp.EncodeBulkString("?"),
-			resp.EncodeBulkString("-1"),
-		),
 	}
 
 	for _, message := range messages {
