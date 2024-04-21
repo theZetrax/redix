@@ -46,3 +46,12 @@ func (s *SimpleString) String() string {
 	s.Parsed = strings.ToUpper(s.decode())
 	return s.Parsed
 }
+
+func ProcessSimpleString(data string) []byte {
+	switch data {
+	case "PING":
+		return EncodeSimpleString("PONG")
+	default:
+		return EncodeSimpleString(data)
+	}
+}

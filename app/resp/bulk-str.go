@@ -59,3 +59,7 @@ func (b *BulkString) Process() []byte {
 func (b *BulkString) String() string {
 	return b.Parsed
 }
+
+func ProcessBulkStirng(data string) []byte {
+	return EncodeBulkString(data)
+}

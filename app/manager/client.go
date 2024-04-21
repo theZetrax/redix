@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -81,34 +80,30 @@ func (c *Client) Setup() {
 				continue
 			}
 
-			handler, _ := resp.HandleResp(message)
-			var response []byte
+			// Parse the incoming message
+			type requestData struct {
+				segment      any
+				segment_type resp.RESP_TYPE
+			}
+			req_data := make([]requestData, 0)
+			for segment, t, rest, err := resp.Parse(message); ; segment, t, rest, err = resp.Parse(rest) {
+				if err != nil {
+					break
+				}
+				req_data = append(req_data, requestData{
+					segment:      segment,
+					segment_type: t,
+				})
+			}
 
-			switch handler.(type) {
-			case *resp.Array:
-				arr := handler.(*resp.Array)
-				fmt.Println("Received From Master: ", arr.Parsed)
-				if resp.IsNestedArray(arr.Parsed) {
-					for _, nested_arr := range arr.Parsed {
-						cmd_handler := cmd.NewCMD(nested_arr.([]any), cmd.CMD_OPTS{
-							Store:       c.manager.store,
-							ReplicaInfo: c.manager.node_info,
-						})
+			log.Println("Recieved: ", req_data)
+			for _, d := range req_data {
+				log.Printf("Working on Request: %v (%v)\n", d.segment, string(d.segment_type))
 
-						switch {
-						case cmd_handler.Name == cmd.CMD_PSYNC: // Register the replica to the master node.
-							cmd_handler.Process(&c.conn, func() {
-								c.manager.register <- c
-							})
-						case cmd_handler.Name == cmd.CMD_SET:
-							cmd_handler.Process(&c.conn, nil)
-							c.manager.broadcast <- message
-						default:
-							cmd_handler.Process(&c.conn, nil)
-						}
-					}
-				} else {
-					cmd_handler := cmd.NewCMD(arr.Parsed, cmd.CMD_OPTS{
+				switch d.segment_type {
+				case resp.TYPE_ARRAY:
+					arr := d.segment
+					cmd_handler := cmd.NewCMD(arr.([]any), cmd.CMD_OPTS{
 						Store:       c.manager.store,
 						ReplicaInfo: c.manager.node_info,
 					})
@@ -124,10 +119,13 @@ func (c *Client) Setup() {
 					default:
 						cmd_handler.Process(&c.conn, nil)
 					}
+				case resp.TYPE_BULK_STRING, resp.TYPE_RDB:
+					response := resp.ProcessBulkStirng(d.segment.(string))
+					c.conn.Write(response)
+				case resp.TYPE_SIMPLE_STRING:
+					response := resp.ProcessSimpleString(d.segment.(string))
+					c.conn.Write(response)
 				}
-			default:
-				response = handler.Process()
-				c.conn.Write(response)
 			}
 		case message := <-c.send:
 			if len(message) == 0 {
