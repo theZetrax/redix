@@ -13,18 +13,20 @@ import (
 
 type CMD_TYPE string
 type CMD_OPTS struct {
-	Store       *repository.Store
-	ReplicaInfo *resp.NodeInfo
+	Store              *repository.Store
+	ReplicaInfo        *resp.NodeInfo
+	ConnectedNodeCount int
 }
 type CMD_HANDLER func(opts CMD_OPTS, args []any) []byte
 type CMD_MULTI_HANDLER func(opts CMD_OPTS, args []any) [][]byte
 type CMD struct {
-	Name           CMD_TYPE
-	Args           []any
-	handler        CMD_HANDLER       // handle request with single response
-	handleMultiple CMD_MULTI_HANDLER // handle request with multiple responses
-	Store          *repository.Store
-	ReplicaInfo    *resp.NodeInfo
+	Name               CMD_TYPE
+	Args               []any
+	handler            CMD_HANDLER       // handle request with single response
+	handleMultiple     CMD_MULTI_HANDLER // handle request with multiple responses
+	Store              *repository.Store
+	ReplicaInfo        *resp.NodeInfo
+	ConnectedNodeCount int
 }
 
 const (
@@ -41,10 +43,11 @@ const (
 
 func NewCMD(raw []any, opts CMD_OPTS) *CMD {
 	cmd := &CMD{
-		Name:        CMD_INVALID,
-		Args:        raw[1:],
-		Store:       opts.Store,
-		ReplicaInfo: opts.ReplicaInfo,
+		Name:               CMD_INVALID,
+		Args:               raw[1:],
+		Store:              opts.Store,
+		ReplicaInfo:        opts.ReplicaInfo,
+		ConnectedNodeCount: opts.ConnectedNodeCount,
 	}
 
 	switch strings.ToUpper(raw[0].(string)) {
@@ -87,8 +90,10 @@ func NewCMD(raw []any, opts CMD_OPTS) *CMD {
 // 2. write the response to the client
 func (c *CMD) Process(conn *net.Conn, post func()) {
 	log.Println("Executing Command: ", c.Name, c.Args)
+
+	opts := CMD_OPTS{Store: c.Store, ReplicaInfo: c.ReplicaInfo, ConnectedNodeCount: c.ConnectedNodeCount}
 	if c.handler != nil {
-		response := c.handler(CMD_OPTS{Store: c.Store, ReplicaInfo: c.ReplicaInfo}, c.Args)
+		response := c.handler(opts, c.Args)
 
 		if conn != nil {
 			logger.LogResp("Sending Response: ", response)
@@ -101,7 +106,7 @@ func (c *CMD) Process(conn *net.Conn, post func()) {
 	}
 
 	if c.handleMultiple != nil {
-		responses := c.handleMultiple(CMD_OPTS{Store: c.Store, ReplicaInfo: c.ReplicaInfo}, c.Args)
+		responses := c.handleMultiple(opts, c.Args)
 
 		if conn != nil {
 			for _, response := range responses {

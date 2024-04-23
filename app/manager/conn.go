@@ -60,7 +60,6 @@ func (n *ConnManager) ConnectToMaster() {
 			}
 		}
 
-		log.Println("OffsetCounter: ", n.NodeInfo.OffsetCount, "BufferCount: ", read_bytes)
 		if n.NodeInfo.OffsetCount != -1 {
 			n.NodeInfo.OffsetCount += read_bytes
 		}

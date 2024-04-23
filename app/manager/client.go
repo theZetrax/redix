@@ -100,9 +100,11 @@ func (c *Client) Setup() {
 				switch d.segment_type {
 				case resp.TYPE_ARRAY:
 					arr := d.segment
+					log.Println("Connected Clinets: ", len(c.manager.clients))
 					cmd_handler := cmd.NewCMD(arr.([]any), cmd.CMD_OPTS{
-						Store:       c.manager.store,
-						ReplicaInfo: c.manager.node_info,
+						Store:              c.manager.store,
+						ReplicaInfo:        c.manager.node_info,
+						ConnectedNodeCount: len(c.manager.clients),
 					})
 
 					switch {
