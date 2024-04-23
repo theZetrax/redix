@@ -36,6 +36,7 @@ const (
 	CMD_REPLCONF CMD_TYPE = "REPLCONF"
 	CMD_PSYNC    CMD_TYPE = "PSYNC"
 	CMD_INFO     CMD_TYPE = "INFO"
+	CMD_WAIT     CMD_TYPE = "WAIT"
 )
 
 func NewCMD(raw []any, opts CMD_OPTS) *CMD {
@@ -65,6 +66,9 @@ func NewCMD(raw []any, opts CMD_OPTS) *CMD {
 	case string(CMD_INFO):
 		cmd.Name = CMD_INFO
 		cmd.handler = handleInfo
+	case string(CMD_WAIT):
+		cmd.Name = CMD_WAIT
+		cmd.handler = handleWait
 	case string(CMD_PSYNC):
 		cmd.Name = CMD_PSYNC
 		cmd.handleMultiple = handlePsync

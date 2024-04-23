@@ -13,6 +13,7 @@ const (
 	TYPE_BULK_STRING   RESP_TYPE = '$'
 	TYPE_ARRAY         RESP_TYPE = '*'
 	TYPE_RDB           RESP_TYPE = 'R'
+	TYPE_INTEGER       RESP_TYPE = ':'
 	TYPE_UNKNOWN       RESP_TYPE = 0
 )
 
