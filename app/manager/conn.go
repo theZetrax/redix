@@ -31,12 +31,8 @@ func (n *ConnManager) Serve(port string) {
 }
 
 // ConnectToMaster connects the replica to the master node.
-func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
-	if node_info == nil {
-		return
-	}
-
-	conn, err := Handshake(node_info.MasterPort, node_info.Port)
+func (n *ConnManager) ConnectToMaster() {
+	conn, err := Handshake(n.NodeInfo.MasterPort, n.NodeInfo.Port)
 	if err != nil {
 		fmt.Println("Failed to connect to master: ", err)
 		os.Exit(1)
@@ -64,6 +60,10 @@ func (n *ConnManager) ConnectToMaster(node_info *resp.NodeInfo) {
 			}
 		}
 
+		log.Println("OffsetCounter: ", n.NodeInfo.OffsetCount, "BufferCount: ", read_bytes)
+		if n.NodeInfo.OffsetCount != -1 {
+			n.NodeInfo.OffsetCount += read_bytes
+		}
 		logger.LogResp("From Master: ", buf[:read_bytes])
 		message := buf[:read_bytes]
 

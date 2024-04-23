@@ -72,7 +72,7 @@ func main() {
 
 	// connect to master node if replica_of is set
 	if replica_of != "" {
-		go server.ConnectToMaster(node_info)
+		go server.ConnectToMaster()
 	}
 	server.Serve(node_info.Port)
 	server.Start()

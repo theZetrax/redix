@@ -23,6 +23,7 @@ type NodeInfo struct {
 	Port                string   `resp:"-"`
 	MasterPort          string   `resp:"-"`
 	MasterHost          string   `resp:"-"`
+	OffsetCount         int      `resp:"-"`
 }
 
 func NewNodeInfo(host string, port string, replicaid string, replicaoffset string, master_addr string) *NodeInfo {
@@ -32,6 +33,7 @@ func NewNodeInfo(host string, port string, replicaid string, replicaoffset strin
 		Role:                RoleMaster,
 		MasterReplicaId:     replicaid,
 		MasterReplicaOffset: replicaoffset,
+		OffsetCount:         -1,
 	}
 
 	if master_addr != "" {

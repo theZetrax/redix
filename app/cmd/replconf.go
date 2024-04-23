@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
@@ -15,6 +16,11 @@ func handleReplConf(opts CMD_OPTS, args []any) []byte {
 
 	sub_cmd := args[0].(string)
 	if sub_cmd == string(SUBCMD_GETACK) {
+		if opts.ReplicaInfo.OffsetCount == -1 {
+			opts.ReplicaInfo.OffsetCount = 0
+		}
+		offsetCount := fmt.Sprintf("%d", opts.ReplicaInfo.OffsetCount)
+
 		return resp.EncodeArray(
 			resp.EncodeBulkString(
 				"REPLCONF",
@@ -23,7 +29,7 @@ func handleReplConf(opts CMD_OPTS, args []any) []byte {
 				"ACK",
 			),
 			resp.EncodeBulkString(
-				"0",
+				offsetCount,
 			),
 		)
 	}
